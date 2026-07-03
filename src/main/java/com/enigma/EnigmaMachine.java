@@ -30,6 +30,16 @@ public final class EnigmaMachine {
         this.plugboard = new Involution(~seed);
     }
 
+    public void rekey(int seed) {
+        Random rand = new Random(seed);
+        for (int i = 0; i < rotors.size(); i++) {
+            int initialPosition = rand.nextInt(256);
+            rotors.get(i).reseed(seed + i, initialPosition);
+        }
+        reflector.reseed(seed);
+        plugboard.reseed(~seed);
+    }
+
     public static EnigmaMachine fromPassword(String password, int rotorCount) {
         return new EnigmaMachine(password.hashCode(), rotorCount);
     }

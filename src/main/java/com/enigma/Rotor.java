@@ -6,11 +6,15 @@ public final class Rotor {
 
     private final byte[] forwardMap = new byte[256];
     private final byte[] reverseMap = new byte[256];
-    private final int turnoverPoint;
-    private final int initialPosition;
+    private int turnoverPoint;
+    private int initialPosition;
     private int position;
 
     public Rotor(int seed, int initialPosition) {
+        reseed(seed, initialPosition);
+    }
+
+    public void reseed(int seed, int initialPosition) {
         Random rand = new Random(seed);
         this.turnoverPoint = Math.floorMod(seed, 256);
         this.initialPosition = Math.floorMod(initialPosition, 256);

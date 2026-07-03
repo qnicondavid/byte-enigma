@@ -5,9 +5,13 @@ import java.util.Random;
 public final class Involution {
 
     private final byte[] map = new byte[256];
+    private final byte[] pool = new byte[256];
 
     public Involution(int seed) {
-        byte[] pool = new byte[256];
+        reseed(seed);
+    }
+
+    public void reseed(int seed) {
         for (int i = 0; i < 256; i++) {
             pool[i] = (byte) i;
         }

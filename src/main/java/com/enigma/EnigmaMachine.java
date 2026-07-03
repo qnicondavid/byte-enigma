@@ -9,13 +9,15 @@ import java.util.Random;
 
 public final class EnigmaMachine {
 
+    public static final int MAX_ROTOR_COUNT = 1024;
+
     private final List<Rotor> rotors;
     private final Involution reflector;
     private final Involution plugboard;
 
     public EnigmaMachine(int seed, int rotorCount) {
-        if (rotorCount < 1) {
-            throw new IllegalArgumentException("rotorCount must be >= 1");
+        if (rotorCount < 1 || rotorCount > MAX_ROTOR_COUNT) {
+            throw new IllegalArgumentException("rotorCount must be between 1 and " + MAX_ROTOR_COUNT);
         }
         List<Rotor> built = new ArrayList<>();
         Random rand = new Random(seed);
@@ -48,7 +50,7 @@ public final class EnigmaMachine {
         return output;
     }
 
-    public void transform(byte[] input, byte[] output) {
+    public int transform(byte[] input, byte[] output) {
         if (output.length < input.length) {
             throw new IllegalArgumentException("output buffer too small");
         }
@@ -70,6 +72,7 @@ public final class EnigmaMachine {
             c = plugboard.apply(c);
             output[i] = (byte) c;
         }
+        return input.length;
     }
 
     private void step() {

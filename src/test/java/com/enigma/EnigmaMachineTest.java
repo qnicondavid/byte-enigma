@@ -3,6 +3,7 @@ package com.enigma;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.charset.StandardCharsets;
@@ -99,6 +100,52 @@ class EnigmaMachineTest {
     void rotorCountMustBePositive() {
         try {
             new EnigmaMachine(123, 0);
+            assertTrue(false, "expected IllegalArgumentException");
+        } catch (IllegalArgumentException expected) {
+        }
+    }
+
+    @Test
+    void transformIntoBufferReturnsBytesWrittenAndLeavesTailUntouched() {
+        EnigmaMachine m = machine("buffer");
+        byte[] input = "reuse this buffer".getBytes(StandardCharsets.UTF_8);
+        byte[] output = new byte[input.length + 8];
+        java.util.Arrays.fill(output, (byte) 0x7F);
+        int written = m.transform(input, output);
+        assertEquals(input.length, written);
+        for (int i = input.length; i < output.length; i++) {
+            assertEquals((byte) 0x7F, output[i], "tail byte " + i + " must be left untouched");
+        }
+    }
+
+    @Test
+    void decryptRejectsMalformedBase64() {
+        EnigmaMachine m = machine("contract");
+        try {
+            m.decrypt("###not base64###");
+            assertTrue(false, "expected IllegalArgumentException");
+        } catch (IllegalArgumentException expected) {
+        }
+    }
+
+    @Test
+    void decryptOfForeignCiphertextDoesNotThrow() {
+        EnigmaMachine m = machine("contract");
+        String foreign = java.util.Base64.getEncoder()
+                .encodeToString(new byte[] {(byte) 0xFF, (byte) 0xFF, (byte) 0xFF, (byte) 0xC0});
+        assertNotNull(m.decrypt(foreign));
+    }
+
+    @Test
+    void rotorCountAtCapIsAccepted() {
+        EnigmaMachine m = new EnigmaMachine(1, EnigmaMachine.MAX_ROTOR_COUNT);
+        assertEquals(EnigmaMachine.MAX_ROTOR_COUNT, m.rotors().size());
+    }
+
+    @Test
+    void rotorCountAboveCapThrows() {
+        try {
+            new EnigmaMachine(1, EnigmaMachine.MAX_ROTOR_COUNT + 1);
             assertTrue(false, "expected IllegalArgumentException");
         } catch (IllegalArgumentException expected) {
         }

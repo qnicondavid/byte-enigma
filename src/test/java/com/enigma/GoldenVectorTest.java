@@ -10,7 +10,7 @@ class GoldenVectorTest {
     void encryptMatchesGoldenVector() {
         EnigmaMachine machine = EnigmaMachine.fromPassword("golden-key", 3);
         String message = "The quick brown fox jumps over the lazy dog.";
-        String expected = "ZwfB44pl/TjFYnP+8pY9RSkXh5sTKr3b2NYZ6CLDF5Kx7W0J5+0iKeB/Af8=";
+        String expected = "pF9Bz42TulETis9AXWT0UW+i790j3qAqybFjqHbHFQvsWeNJnpyv/5Y47fs=";
         assertEquals(expected, machine.encrypt(message));
     }
 }

@@ -48,8 +48,18 @@ public final class EnigmaMachine {
         return h;
     }
 
+    static int seedFromPassword(String password) {
+        byte[] bytes = password.getBytes(StandardCharsets.UTF_8);
+        int h = 0x811C9DC5;
+        for (byte b : bytes) {
+            h ^= (b & 0xFF);
+            h *= 0x01000193;
+        }
+        return mix(h, 0x50617373);
+    }
+
     public static EnigmaMachine fromPassword(String password, int rotorCount) {
-        return new EnigmaMachine(password.hashCode(), rotorCount);
+        return new EnigmaMachine(seedFromPassword(password), rotorCount);
     }
 
     public String encrypt(String text) {

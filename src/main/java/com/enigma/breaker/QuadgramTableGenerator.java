@@ -11,6 +11,8 @@ public final class QuadgramTableGenerator {
     private static final int PRUNE_MIN_COUNT = 5;
     private static final Path OUTPUT =
             Path.of("src", "main", "resources", "com", "enigma", "breaker", "quadgrams.txt");
+    private static final Path DEFAULT_CORPUS =
+            Path.of("data", "corpus", "corpus.txt");
 
     private static final String CORPUS = String.join(" ",
         "It is a truth universally acknowledged that a single man in possession of a good fortune must be in want of a wife.",
@@ -172,15 +174,31 @@ public final class QuadgramTableGenerator {
     }
 
     public static void main(String[] args) throws IOException {
-        Path target = args.length > 0 ? Path.of(args[0]) : OUTPUT;
+        Path corpusPath = args.length > 0 ? Path.of(args[0]) : DEFAULT_CORPUS;
+        Path target = OUTPUT;
+        String source = resolveCorpus(corpusPath);
         int[] counts = new int[QuadgramScorer.QUADGRAM_SPACE];
-        long total = countInto(CORPUS, counts);
+        long total = countInto(source, counts);
         Files.createDirectories(target.getParent());
         try (Writer writer = Files.newBufferedWriter(target, StandardCharsets.UTF_8)) {
             write(writer, counts, total);
         }
         System.out.println("wrote " + target.toAbsolutePath()
+                + " origin=" + originLabel(corpusPath)
                 + " total=" + total + " kept=" + countKept(counts));
+    }
+
+    static String resolveCorpus(Path corpusPath) throws IOException {
+        if (corpusPath != null && Files.isRegularFile(corpusPath)) {
+            return Files.readString(corpusPath, StandardCharsets.UTF_8);
+        }
+        return CORPUS;
+    }
+
+    private static String originLabel(Path corpusPath) {
+        return corpusPath != null && Files.isRegularFile(corpusPath)
+                ? corpusPath.toAbsolutePath().toString()
+                : "embedded-sample";
     }
 
     static long countInto(String text, int[] counts) {

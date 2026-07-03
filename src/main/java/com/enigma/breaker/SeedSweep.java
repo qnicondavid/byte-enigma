@@ -67,10 +67,11 @@ public final class SeedSweep {
         long began = System.nanoTime();
         BestKeeper keeper = new BestKeeper(topN);
         byte[] out = new byte[ciphertext.length];
+        EnigmaMachine machine = new EnigmaMachine((int) start, rotorCount);
         long tried = 0;
         for (long s = start; s < end; s++) {
             int seed = (int) s;
-            EnigmaMachine machine = new EnigmaMachine(seed, rotorCount);
+            machine.rekey(seed);
             Candidate candidate = evaluator.evaluate(seed, machine, ciphertext, out);
             if (candidate != null) {
                 keeper.offer(candidate);
@@ -142,6 +143,7 @@ public final class SeedSweep {
 
         @Override
         public void run() {
+            EnigmaMachine machine = new EnigmaMachine(0, rotorCount);
             while (true) {
                 long chunkStart = cursor.getAndAdd(CHUNK);
                 if (chunkStart >= end) {
@@ -150,7 +152,7 @@ public final class SeedSweep {
                 long chunkEnd = Math.min(chunkStart + CHUNK, end);
                 for (long s = chunkStart; s < chunkEnd; s++) {
                     int seed = (int) s;
-                    EnigmaMachine machine = new EnigmaMachine(seed, rotorCount);
+                    machine.rekey(seed);
                     Candidate candidate = evaluator.evaluate(seed, machine, ciphertext, out);
                     if (candidate != null) {
                         best.offer(candidate);

@@ -20,24 +20,32 @@ public final class EnigmaMachine {
             throw new IllegalArgumentException("rotorCount must be between 1 and " + MAX_ROTOR_COUNT);
         }
         List<Rotor> built = new ArrayList<>();
-        Random rand = new Random(seed);
+        Random rand = new Random(mix(seed, 0));
         for (int i = 0; i < rotorCount; i++) {
             int initialPosition = rand.nextInt(256);
-            built.add(new Rotor(seed + i, initialPosition));
+            built.add(new Rotor(mix(seed, i + 1), initialPosition));
         }
         this.rotors = built;
-        this.reflector = new Involution(seed);
-        this.plugboard = new Involution(~seed);
+        this.reflector = new Involution(mix(seed, -1));
+        this.plugboard = new Involution(mix(seed, -2));
     }
 
     public void rekey(int seed) {
-        Random rand = new Random(seed);
+        Random rand = new Random(mix(seed, 0));
         for (int i = 0; i < rotors.size(); i++) {
             int initialPosition = rand.nextInt(256);
-            rotors.get(i).reseed(seed + i, initialPosition);
+            rotors.get(i).reseed(mix(seed, i + 1), initialPosition);
         }
-        reflector.reseed(seed);
-        plugboard.reseed(~seed);
+        reflector.reseed(mix(seed, -1));
+        plugboard.reseed(mix(seed, -2));
+    }
+
+    static int mix(int base, int tag) {
+        int h = base ^ (tag * 0x9E3779B9);
+        h ^= (h >>> 16); h *= 0x85EBCA6B;
+        h ^= (h >>> 13); h *= 0xC2B2AE35;
+        h ^= (h >>> 16);
+        return h;
     }
 
     public static EnigmaMachine fromPassword(String password, int rotorCount) {

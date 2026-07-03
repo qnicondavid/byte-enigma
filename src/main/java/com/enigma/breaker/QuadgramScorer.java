@@ -24,14 +24,10 @@ public final class QuadgramScorer implements PlaintextScorer {
 
     private static final double UNSEEN_MASS_FRACTION = 0.01;
     private static final String TOTAL_HEADER_KEY = "total=";
-    private static final int INITIAL_SCRATCH = 256;
 
     private final double[] logProbability;
     private final double floorLogProbability;
     private final long totalQuadgrams;
-
-    private final ThreadLocal<byte[]> scratch =
-            ThreadLocal.withInitial(() -> new byte[INITIAL_SCRATCH]);
 
     private QuadgramScorer(double[] logProbability, double floorLogProbability, long totalQuadgrams) {
         this.logProbability = logProbability;
@@ -100,9 +96,11 @@ public final class QuadgramScorer implements PlaintextScorer {
 
     @Override
     public double score(byte[] plaintext, int len) {
-        byte[] letters = scratchFor(len);
-        int count = normalize(plaintext, len, letters);
-        return accumulate(letters, count);
+        String upper = decode(plaintext, len).toUpperCase(Locale.ROOT);
+        if (upper.length() < QUADGRAM_LENGTH) {
+            return floorLogProbability * Math.max(1, len - (QUADGRAM_LENGTH - 1));
+        }
+        return sumOverWindows(upper);
     }
 
     public double score(byte[] decrypted) {
@@ -114,13 +112,12 @@ public final class QuadgramScorer implements PlaintextScorer {
     }
 
     public double meanScore(byte[] decrypted, int len) {
-        byte[] letters = scratchFor(len);
-        int count = normalize(decrypted, len, letters);
-        int quadgrams = count - (QUADGRAM_LENGTH - 1);
-        if (quadgrams <= 0) {
+        String upper = decode(decrypted, len).toUpperCase(Locale.ROOT);
+        int windows = upper.length() - (QUADGRAM_LENGTH - 1);
+        if (windows <= 0) {
             return floorLogProbability;
         }
-        return accumulate(letters, count) / quadgrams;
+        return sumOverWindows(upper) / windows;
     }
 
     public long totalQuadgrams() {
@@ -131,36 +128,23 @@ public final class QuadgramScorer implements PlaintextScorer {
         return floorLogProbability;
     }
 
-    private double accumulate(byte[] letters, int count) {
+    private double sumOverWindows(String upper) {
+        int windows = upper.length() - (QUADGRAM_LENGTH - 1);
         double sum = 0.0;
-        int last = count - QUADGRAM_LENGTH;
-        for (int i = 0; i <= last; i++) {
-            int index = ((letters[i] * ALPHABET_SIZE + letters[i + 1]) * ALPHABET_SIZE
-                    + letters[i + 2]) * ALPHABET_SIZE + letters[i + 3];
-            sum += logProbability[index];
+        for (int i = 0; i < windows; i++) {
+            int index = 0;
+            boolean allLetters = true;
+            for (int k = 0; k < QUADGRAM_LENGTH; k++) {
+                char letter = upper.charAt(i + k);
+                if (letter < 'A' || letter > 'Z') {
+                    allLetters = false;
+                    break;
+                }
+                index = index * ALPHABET_SIZE + (letter - 'A');
+            }
+            sum += allLetters ? logProbability[index] : floorLogProbability;
         }
         return sum;
-    }
-
-    private byte[] scratchFor(int len) {
-        byte[] buffer = scratch.get();
-        if (buffer.length < len) {
-            buffer = new byte[Integer.highestOneBit(len - 1) << 1];
-            scratch.set(buffer);
-        }
-        return buffer;
-    }
-
-    static int normalize(byte[] data, int len, byte[] destination) {
-        String upper = decode(data, len).toUpperCase(Locale.ROOT);
-        int written = 0;
-        for (int i = 0; i < upper.length() && written < destination.length; i++) {
-            char letter = upper.charAt(i);
-            if (letter >= 'A' && letter <= 'Z') {
-                destination[written++] = (byte) (letter - 'A');
-            }
-        }
-        return written;
     }
 
     private static String decode(byte[] data, int len) {
@@ -185,5 +169,17 @@ public final class QuadgramScorer implements PlaintextScorer {
             index = index * ALPHABET_SIZE + (letter - 'A');
         }
         return index;
+    }
+
+    static int normalize(byte[] data, int len, byte[] destination) {
+        String upper = decode(data, len).toUpperCase(Locale.ROOT);
+        int written = 0;
+        for (int i = 0; i < upper.length() && written < destination.length; i++) {
+            char letter = upper.charAt(i);
+            if (letter >= 'A' && letter <= 'Z') {
+                destination[written++] = (byte) (letter - 'A');
+            }
+        }
+        return written;
     }
 }

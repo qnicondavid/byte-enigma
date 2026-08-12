@@ -279,10 +279,20 @@ public final class SeedSweep<T> {
             this.heap = new PriorityQueue<>(capacity, Candidate.WEAKEST_FIRST);
         }
 
+        /**
+         * Called once per key, so the common case is spelled out rather than routed through a
+         * chained comparator. The condition is exactly {@code WEAKEST_FIRST.compare(candidate,
+         * weakest) > 0}; {@code LeaderboardOrderingTest} pins that the two agree.
+         */
         private void offer(Candidate candidate) {
             if (heap.size() < capacity) {
                 heap.offer(candidate);
-            } else if (Candidate.WEAKEST_FIRST.compare(candidate, heap.peek()) > 0) {
+                return;
+            }
+            Candidate weakest = heap.peek();
+            double score = candidate.score();
+            double weakestScore = weakest.score();
+            if (score > weakestScore || (score == weakestScore && candidate.key() < weakest.key())) {
                 heap.poll();
                 heap.offer(candidate);
             }

@@ -17,7 +17,7 @@
     <description>The cipher, the keyspace search, the breaker and the command line.</description>
 
     <properties>
-        <main.class>io.github.qnicondavid.byteenigma.breaker.BreakerDemo</main.class>
+        <main.class>io.github.qnicondavid.byteenigma.cli.Main</main.class>
     </properties>
 
     <dependencies>

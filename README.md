@@ -87,8 +87,11 @@ crib cannot sit there. The same reciprocity that lets one setting both encrypt a
 hands the attacker that discount, and it is the flaw Bletchley Park leaned on hardest.
 
 ```
+# which positions are still possible, before trying a single key
 byte-enigma offsets --crib "ATTACK AT DAWN" --in message.b64
-byte-enigma break   --crib "ATTACK AT DAWN" --at 0 --in message.b64
+
+# then sweep one of them
+byte-enigma break --crib "ATTACK AT DAWN" --at 0 --in message.b64
 ```
 
 **Quadgrams, ciphertext only.** No crib. The search decrypts under every key and keeps whichever
@@ -198,7 +201,7 @@ Then commit the corpus and the regenerated table together.
 
 ## Reading further
 
-- [docs/why-the-cipher-falls.md](docs/why-the-cipher-falls.md): the four weaknesses, what each one
+- [docs/why-the-cipher-falls.md](docs/why-the-cipher-falls.md): the five weaknesses, what each one
   costs the attacker, and which of them a nonce fixes.
 - [docs/keyspace-sweep.md](docs/keyspace-sweep.md): a full 2^32 sweep, actually run, with the raw log.
 - [docs/adr/0001-derived-wiring-over-historical-rotors.md](docs/adr/0001-derived-wiring-over-historical-rotors.md)

@@ -1,113 +1,99 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 420" width="880" height="420"
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 430" width="880" height="430"
      font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" role="img"
-     aria-labelledby="title desc">
-  <title id="title">The signal path of byte-enigma</title>
-  <desc id="desc">A byte enters the plugboard, passes forward through three rotors, meets the
+     aria-labelledby="svg-title svg-desc">
+  <title id="svg-title">The signal path of byte-enigma</title>
+  <desc id="svg-desc">A byte enters the plugboard, passes forward through three rotors, meets the
     reflector, returns backward through the same three rotors in reverse order, passes through the
     plugboard again, and leaves. The reflector is a fixed-point-free involution, which is why the
     machine is reciprocal and why no byte can ever come out as itself.</desc>
 
-  <style>
-    .box   { fill: none; stroke: #7d8590; stroke-width: 2; }
-    .rotor { fill: none; stroke: #58a6ff; stroke-width: 2; }
-    .refl  { fill: none; stroke: #d29922; stroke-width: 2.5; }
-    .plug  { fill: none; stroke: #3fb950; stroke-width: 2; }
-    .lbl   { fill: #7d8590; font-size: 13px; }
-    .name  { fill: #7d8590; font-size: 14px; font-weight: 600; }
-    .fwd   { fill: none; stroke: #58a6ff; stroke-width: 2; marker-end: url(#arrow-fwd); }
-    .bwd   { fill: none; stroke: #a371f7; stroke-width: 2; marker-end: url(#arrow-bwd); }
-    .note  { fill: #8b949e; font-size: 12.5px; }
-    .key   { fill: #8b949e; font-size: 12.5px; font-style: italic; }
-  </style>
-
   <defs>
     <marker id="arrow-fwd" viewBox="0 0 10 10" refX="9" refY="5"
             markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-      <path d="M 0 0 L 10 5 L 0 10 z" fill="#58a6ff"/>
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#3b82c4"/>
     </marker>
     <marker id="arrow-bwd" viewBox="0 0 10 10" refX="9" refY="5"
             markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-      <path d="M 0 0 L 10 5 L 0 10 z" fill="#a371f7"/>
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#8b5cd6"/>
     </marker>
   </defs>
 
-  <!-- forward row -->
-  <text x="20" y="86" class="lbl">in</text>
-  <path class="fwd" d="M 44 80 L 96 80"/>
+  <!-- forward pass -->
+  <text x="16" y="86" fill="#7d8590" font-size="13">in</text>
+  <path d="M 40 80 L 96 80" fill="none" stroke="#3b82c4" stroke-width="2" marker-end="url(#arrow-fwd)"/>
 
-  <rect class="plug" x="100" y="52" width="96" height="56" rx="6"/>
-  <text x="148" y="77" class="name" text-anchor="middle">plugboard</text>
-  <text x="148" y="95" class="note" text-anchor="middle">128 pairs</text>
+  <rect x="100" y="52" width="96" height="56" rx="6" fill="none" stroke="#2f9e57" stroke-width="2"/>
+  <text x="148" y="77" fill="#7d8590" font-size="14" font-weight="600" text-anchor="middle">plugboard</text>
+  <text x="148" y="95" fill="#8b949e" font-size="12" text-anchor="middle">128 pairs</text>
 
-  <path class="fwd" d="M 200 80 L 252 80"/>
+  <path d="M 200 80 L 252 80" fill="none" stroke="#3b82c4" stroke-width="2" marker-end="url(#arrow-fwd)"/>
 
-  <rect class="rotor" x="256" y="52" width="88" height="56" rx="6"/>
-  <text x="300" y="77" class="name" text-anchor="middle">rotor 0</text>
-  <text x="300" y="95" class="note" text-anchor="middle">steps every byte</text>
+  <rect x="256" y="52" width="88" height="56" rx="6" fill="none" stroke="#3b82c4" stroke-width="2"/>
+  <text x="300" y="77" fill="#7d8590" font-size="14" font-weight="600" text-anchor="middle">rotor 0</text>
+  <text x="300" y="95" fill="#8b949e" font-size="11" text-anchor="middle">steps every byte</text>
 
-  <path class="fwd" d="M 348 80 L 400 80"/>
+  <path d="M 348 80 L 400 80" fill="none" stroke="#3b82c4" stroke-width="2" marker-end="url(#arrow-fwd)"/>
 
-  <rect class="rotor" x="404" y="52" width="88" height="56" rx="6"/>
-  <text x="448" y="77" class="name" text-anchor="middle">rotor 1</text>
-  <text x="448" y="95" class="note" text-anchor="middle">on turnover</text>
+  <rect x="404" y="52" width="88" height="56" rx="6" fill="none" stroke="#3b82c4" stroke-width="2"/>
+  <text x="448" y="77" fill="#7d8590" font-size="14" font-weight="600" text-anchor="middle">rotor 1</text>
+  <text x="448" y="95" fill="#8b949e" font-size="11" text-anchor="middle">on turnover</text>
 
-  <path class="fwd" d="M 496 80 L 548 80"/>
+  <path d="M 496 80 L 548 80" fill="none" stroke="#3b82c4" stroke-width="2" marker-end="url(#arrow-fwd)"/>
 
-  <rect class="rotor" x="552" y="52" width="88" height="56" rx="6"/>
-  <text x="596" y="77" class="name" text-anchor="middle">rotor 2</text>
-  <text x="596" y="95" class="note" text-anchor="middle">on turnover</text>
+  <rect x="552" y="52" width="88" height="56" rx="6" fill="none" stroke="#3b82c4" stroke-width="2"/>
+  <text x="596" y="77" fill="#7d8590" font-size="14" font-weight="600" text-anchor="middle">rotor 2</text>
+  <text x="596" y="95" fill="#8b949e" font-size="11" text-anchor="middle">on turnover</text>
 
-  <path class="fwd" d="M 644 80 L 700 80"/>
+  <path d="M 644 80 L 700 80" fill="none" stroke="#3b82c4" stroke-width="2" marker-end="url(#arrow-fwd)"/>
 
   <!-- reflector -->
-  <rect class="refl" x="704" y="52" width="120" height="140" rx="6"/>
-  <text x="764" y="110" class="name" text-anchor="middle">reflector</text>
-  <text x="764" y="130" class="note" text-anchor="middle">128 pairs,</text>
-  <text x="764" y="147" class="note" text-anchor="middle">no fixed point</text>
+  <rect x="704" y="52" width="120" height="140" rx="6" fill="none" stroke="#bf8700" stroke-width="2.5"/>
+  <text x="764" y="108" fill="#7d8590" font-size="14" font-weight="600" text-anchor="middle">reflector</text>
+  <text x="764" y="129" fill="#8b949e" font-size="12" text-anchor="middle">128 pairs,</text>
+  <text x="764" y="146" fill="#8b949e" font-size="12" text-anchor="middle">no fixed point</text>
 
-  <!-- backward row -->
-  <path class="bwd" d="M 704 164 L 644 164"/>
+  <!-- backward pass -->
+  <path d="M 704 164 L 644 164" fill="none" stroke="#8b5cd6" stroke-width="2" marker-end="url(#arrow-bwd)"/>
 
-  <rect class="rotor" x="552" y="136" width="88" height="56" rx="6"/>
-  <text x="596" y="161" class="name" text-anchor="middle">rotor 2</text>
-  <text x="596" y="179" class="note" text-anchor="middle">inverse</text>
+  <rect x="552" y="136" width="88" height="56" rx="6" fill="none" stroke="#8b5cd6" stroke-width="2"/>
+  <text x="596" y="161" fill="#7d8590" font-size="14" font-weight="600" text-anchor="middle">rotor 2</text>
+  <text x="596" y="179" fill="#8b949e" font-size="11" text-anchor="middle">inverse</text>
 
-  <path class="bwd" d="M 552 164 L 496 164"/>
+  <path d="M 552 164 L 496 164" fill="none" stroke="#8b5cd6" stroke-width="2" marker-end="url(#arrow-bwd)"/>
 
-  <rect class="rotor" x="404" y="136" width="88" height="56" rx="6"/>
-  <text x="448" y="161" class="name" text-anchor="middle">rotor 1</text>
-  <text x="448" y="179" class="note" text-anchor="middle">inverse</text>
+  <rect x="404" y="136" width="88" height="56" rx="6" fill="none" stroke="#8b5cd6" stroke-width="2"/>
+  <text x="448" y="161" fill="#7d8590" font-size="14" font-weight="600" text-anchor="middle">rotor 1</text>
+  <text x="448" y="179" fill="#8b949e" font-size="11" text-anchor="middle">inverse</text>
 
-  <path class="bwd" d="M 404 164 L 348 164"/>
+  <path d="M 404 164 L 348 164" fill="none" stroke="#8b5cd6" stroke-width="2" marker-end="url(#arrow-bwd)"/>
 
-  <rect class="rotor" x="256" y="136" width="88" height="56" rx="6"/>
-  <text x="300" y="161" class="name" text-anchor="middle">rotor 0</text>
-  <text x="300" y="179" class="note" text-anchor="middle">inverse</text>
+  <rect x="256" y="136" width="88" height="56" rx="6" fill="none" stroke="#8b5cd6" stroke-width="2"/>
+  <text x="300" y="161" fill="#7d8590" font-size="14" font-weight="600" text-anchor="middle">rotor 0</text>
+  <text x="300" y="179" fill="#8b949e" font-size="11" text-anchor="middle">inverse</text>
 
-  <path class="bwd" d="M 256 164 L 200 164"/>
+  <path d="M 256 164 L 200 164" fill="none" stroke="#8b5cd6" stroke-width="2" marker-end="url(#arrow-bwd)"/>
 
-  <rect class="plug" x="100" y="136" width="96" height="56" rx="6"/>
-  <text x="148" y="168" class="name" text-anchor="middle">plugboard</text>
+  <rect x="100" y="136" width="96" height="56" rx="6" fill="none" stroke="#2f9e57" stroke-width="2"/>
+  <text x="148" y="168" fill="#7d8590" font-size="14" font-weight="600" text-anchor="middle">plugboard</text>
 
-  <path class="bwd" d="M 100 164 L 48 164"/>
-  <text x="20" y="170" class="lbl">out</text>
+  <path d="M 100 164 L 44 164" fill="none" stroke="#8b5cd6" stroke-width="2" marker-end="url(#arrow-bwd)"/>
+  <text x="16" y="170" fill="#7d8590" font-size="13">out</text>
 
-  <!-- annotations -->
-  <line x1="60" y1="236" x2="820" y2="236" stroke="#30363d" stroke-width="1"/>
+  <line x1="56" y1="236" x2="824" y2="236" stroke="#8b949e" stroke-width="1" opacity="0.4"/>
 
-  <text x="60" y="266" class="key">Everything below the line is derived from one 32-bit key.</text>
+  <text x="56" y="266" fill="#8b949e" font-size="12.5" font-style="italic">Everything above the line is derived from one 32-bit key.</text>
 
-  <text x="60" y="296" class="note">
-    <tspan fill="#3fb950">plugboard</tspan>, <tspan fill="#d29922">reflector</tspan>
-    <tspan> — fixed-point-free involutions of the 256 byte values, so applying either twice is the identity</tspan>
+  <text x="56" y="296" fill="#8b949e" font-size="12.5">
+    <tspan fill="#2f9e57" font-weight="600">plugboard</tspan><tspan> and </tspan><tspan fill="#bf8700" font-weight="600">reflector</tspan><tspan>: fixed-point-free involutions of the 256 byte values, so</tspan>
   </text>
-  <text x="60" y="318" class="note">
-    <tspan fill="#58a6ff">rotors</tspan>
-    <tspan> — key-derived permutations with an offset that advances as the message is consumed</tspan>
-  </text>
+  <text x="56" y="314" fill="#8b949e" font-size="12.5">applying either one twice is the identity.</text>
 
-  <text x="60" y="352" class="note">The reflector has no fixed point, and every rotor pass is a conjugation of it, so the whole</text>
-  <text x="60" y="370" class="note">machine inherits the property: no byte ever comes out as the byte that went in. That is what</text>
-  <text x="60" y="388" class="note">makes one setting both encrypt and decrypt, and it is what lets an attacker rule out crib</text>
-  <text x="60" y="406" class="note">positions without trying a single key.</text>
+  <text x="56" y="342" fill="#8b949e" font-size="12.5">
+    <tspan fill="#3b82c4" font-weight="600">rotors</tspan><tspan> forward and </tspan><tspan fill="#8b5cd6" font-weight="600">rotors</tspan><tspan> back: the same key-derived permutations, applied in</tspan>
+  </text>
+  <text x="56" y="360" fill="#8b949e" font-size="12.5">reverse order and inverted, with an offset that advances as the message is consumed.</text>
+
+  <text x="56" y="392" fill="#8b949e" font-size="12.5">The reflector has no fixed point and every rotor pass is a conjugation of it, so the whole machine</text>
+  <text x="56" y="410" fill="#8b949e" font-size="12.5">inherits the property: no byte ever comes out as the byte that went in. That is what makes one</text>
+  <text x="56" y="428" fill="#8b949e" font-size="12.5">setting both encrypt and decrypt, and what lets an attacker rule out crib positions for free.</text>
 </svg>

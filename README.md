@@ -19,6 +19,8 @@ $ byte-enigma demo
     rate:       383,173 keys/sec, so 2^32 projects to 3.11 h
 ```
 
+![The signal path: a byte goes in through the plugboard, forward through three rotors, meets the reflector, and comes back out through the same rotors in reverse](docs/signal-path.svg)
+
 ## What this is not
 
 **It is not an Enigma simulator.** It will not decrypt a wartime message and it will not match a

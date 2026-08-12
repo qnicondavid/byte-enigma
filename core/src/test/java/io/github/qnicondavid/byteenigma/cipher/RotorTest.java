@@ -47,4 +47,11 @@ class RotorTest {
                     "turnover point " + turnover + " out of range at seed " + seed);
         }
     }
+
+    @Test
+    void positionAtOverridesTheOffsetWithinRange() {
+        Rotor rotor = new Rotor(3, 10);
+        rotor.positionAt(300);
+        assertEquals(300 & 0xFF, rotor.position());
+    }
 }

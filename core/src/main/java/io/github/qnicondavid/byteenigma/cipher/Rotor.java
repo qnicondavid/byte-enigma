@@ -56,6 +56,11 @@ final class Rotor {
         position = initialPosition;
     }
 
+    /** Overrides the offset, used to start a message from a nonce-derived position. */
+    void positionAt(int value) {
+        position = value & 0xFF;
+    }
+
     int forward(int value) {
         return forwardMap[(value + position) & 0xFF] & 0xFF;
     }

@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.github.qnicondavid.byteenigma.cipher.ByteEnigma;
+import io.github.qnicondavid.byteenigma.cipher.Envelope;
 import io.github.qnicondavid.byteenigma.search.Candidate;
 import io.github.qnicondavid.byteenigma.search.SeedEvaluator;
 import io.github.qnicondavid.byteenigma.search.SeedSweep;
@@ -74,5 +75,24 @@ class BreakerEndToEndTest {
         double margin = result.best().get(0).score() - result.best().get(1).score();
         assertTrue(margin > 20.0,
                 "the true key should win by a wide margin, but only led by " + margin);
+    }
+
+    @Test
+    void aNonceDoesNotProtectTheKeyOnceItTravelsInTheClear() {
+        byte[] plaintext = TEXT.getBytes(StandardCharsets.UTF_8);
+        ByteEnigma sender = new ByteEnigma(SECRET, ROTORS);
+        byte[] sealed = Envelope.seal(sender, plaintext, 987_654_321L);
+        long nonce = Envelope.nonceOf(sealed);
+        byte[] body = java.util.Arrays.copyOfRange(sealed, Envelope.NONCE_BYTES, sealed.length);
+
+        SeedEvaluator<ByteEnigma> withKnownNonce = (key, machine, ciphertext, scratch) -> {
+            machine.rekey(key);
+            int length = machine.transform(ciphertext, scratch, nonce);
+            return Candidate.of(key, QuadgramScorer.fromResource().score(scratch, length), scratch, length);
+        };
+
+        SweepResult result = new SeedSweep<>(() -> new ByteEnigma(0, ROTORS), 1)
+                .sweep(SECRET - 200L, SECRET + 200L, body, withKnownNonce);
+        assertRecovered(result, plaintext);
     }
 }

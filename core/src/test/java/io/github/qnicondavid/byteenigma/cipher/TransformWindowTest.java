@@ -56,6 +56,18 @@ class TransformWindowTest {
     }
 
     @Test
+    void aNoncedWindowMatchesTheFullNoncedTransform() {
+        byte[] input = input(200);
+        ByteEnigma machine = new ByteEnigma(-99, 3);
+        byte[] full = machine.transform(input, 31337L);
+        byte[] window = new byte[input.length];
+        machine.transformWindow(input, window, 50, 90, 31337L);
+        for (int i = 50; i < 90; i++) {
+            assertEquals(full[i], window[i], "byte " + i + " differs");
+        }
+    }
+
+    @Test
     void anEmptyWindowIsLegalAndWritesNothing() {
         ByteEnigma machine = new ByteEnigma(1, 3);
         assertEquals(0, machine.transformWindow(input(10), new byte[10], 5, 5));

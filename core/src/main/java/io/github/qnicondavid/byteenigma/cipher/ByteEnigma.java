@@ -131,7 +131,7 @@ public final class ByteEnigma {
     }
 
     /**
-     * Transforms the whole input, returning a fresh array.
+     * Textbook mode: transforms the whole input, returning a fresh array.
      *
      * <p>Self-inverse. Feeding the output back in with the same key returns the input.
      */
@@ -155,8 +155,30 @@ public final class ByteEnigma {
         return run(input, output, 0, input.length);
     }
 
+    /** Nonced mode, returning a fresh array. Never reuse a (key, nonce) pair. */
+    public byte[] transform(byte[] input, long nonce) {
+        byte[] output = new byte[input.length];
+        transform(input, output, nonce);
+        return output;
+    }
+
     /**
-     * Transforms one window of the message.
+     * Nonced mode into a caller-supplied buffer.
+     *
+     * <p>Rotor offsets come from key and nonce together, so two messages under one key no longer
+     * share their permutation sequence. This closes the keystream-reuse leak and nothing else:
+     * the key is still 32 bits and the message is still unauthenticated.
+     *
+     * @return the number of bytes written, always {@code input.length}
+     */
+    public int transform(byte[] input, byte[] output, long nonce) {
+        requireCapacity(input.length, output.length);
+        seedPositions(nonce);
+        return run(input, output, 0, input.length);
+    }
+
+    /**
+     * Textbook mode over one window of the message.
      *
      * <p>Steps the rotors through {@code input[0, from)} without doing the substitution work,
      * then transforms {@code input[from, to)} into the same range of {@code output}. Bytes
@@ -171,6 +193,13 @@ public final class ByteEnigma {
     public int transformWindow(byte[] input, byte[] output, int from, int to) {
         requireWindow(input.length, output.length, from, to);
         resetPositions();
+        return run(input, output, from, to);
+    }
+
+    /** Nonced mode over one window. See {@link #transformWindow(byte[], byte[], int, int)}. */
+    public int transformWindow(byte[] input, byte[] output, int from, int to, long nonce) {
+        requireWindow(input.length, output.length, from, to);
+        seedPositions(nonce);
         return run(input, output, from, to);
     }
 
@@ -208,6 +237,13 @@ public final class ByteEnigma {
         }
     }
 
+    private void seedPositions(long nonce) {
+        positions.setSeed(mix64(key, nonce));
+        for (Rotor rotor : rotors) {
+            rotor.positionAt(positions.nextInt(ALPHABET_SIZE));
+        }
+    }
+
     private static void requireCapacity(int inputLength, int outputLength) {
         if (outputLength < inputLength) {
             throw new IllegalArgumentException(
@@ -238,6 +274,14 @@ public final class ByteEnigma {
         h *= 0xC2B2AE35;
         h ^= (h >>> 16);
         return h;
+    }
+
+    /** Folds key and nonce into the 64-bit value that seeds the starting rotor offsets. */
+    static long mix64(int key, long nonce) {
+        long z = nonce + 0x9E3779B97F4A7C15L + ((long) key * 0xD1B54A32D192ED03L);
+        z = (z ^ (z >>> 30)) * 0xBF58476D1CE4E5B9L;
+        z = (z ^ (z >>> 27)) * 0x94D049BB133111EBL;
+        return z ^ (z >>> 31);
     }
 
     /**

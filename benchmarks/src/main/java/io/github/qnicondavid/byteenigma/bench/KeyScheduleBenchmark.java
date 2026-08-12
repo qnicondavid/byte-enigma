@@ -15,49 +15,40 @@ import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.infra.Blackhole;
 
+/**
+ * Building a key schedule from scratch against rebuilding one in place.
+ *
+ * <p>The two are byte-identical, which {@code RekeyEquivalenceTest} enforces, so the gap between
+ * these numbers is pure allocation and garbage collection that a sweep gets to skip.
+ */
 @BenchmarkMode(Mode.AverageTime)
-@OutputTimeUnit(TimeUnit.NANOSECONDS)
+@OutputTimeUnit(TimeUnit.MICROSECONDS)
 @State(Scope.Thread)
 @Warmup(iterations = 5, time = 2)
 @Measurement(iterations = 5, time = 2)
-@Fork(5)
-public class RekeyBenchmark {
+@Fork(2)
+public class KeyScheduleBenchmark {
 
-    @Param({"3"})
+    @Param({"1", "3", "8"})
     public int rotorCount;
 
-    @Param({"40"})
-    public int windowSize;
-
-    private byte[] window;
-    private byte[] out;
     private ByteEnigma reusable;
-    private int seedCursor;
+    private int key;
 
     @Setup
     public void setup() {
-        window = new byte[windowSize];
-        out = new byte[windowSize];
-        for (int i = 0; i < windowSize; i++) {
-            window[i] = (byte) i;
-        }
         reusable = new ByteEnigma(0, rotorCount);
-        seedCursor = 0;
+        key = 0;
     }
 
     @Benchmark
-    public void construct(Blackhole bh) {
-        ByteEnigma machine = new ByteEnigma(seedCursor++, rotorCount);
-        machine.transform(window, out);
-        bh.consume(out);
-        bh.consume(machine);
+    public void construct(Blackhole blackhole) {
+        blackhole.consume(new ByteEnigma(key++, rotorCount));
     }
 
     @Benchmark
-    public void rekey(Blackhole bh) {
-        reusable.rekey(seedCursor++);
-        reusable.transform(window, out);
-        bh.consume(out);
-        bh.consume(reusable);
+    public void rekeyInPlace(Blackhole blackhole) {
+        reusable.rekey(key++);
+        blackhole.consume(reusable);
     }
 }

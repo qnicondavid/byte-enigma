@@ -15,6 +15,7 @@ import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
 
+/** Throughput of the transform itself, once the key schedule is already built. */
 @BenchmarkMode(Mode.Throughput)
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
 @State(Scope.Thread)
@@ -40,14 +41,23 @@ public class TransformBenchmark {
         reuseBuffer = new byte[messageSize];
     }
 
+    /** Allocates a fresh output array every call. */
     @Benchmark
-    public byte[] transform() {
+    public byte[] allocating() {
         return machine.transform(payload);
     }
 
+    /** Writes into a buffer the caller owns, which is what a sweep does. */
     @Benchmark
-    public byte[] transformReusingBuffer() {
+    public byte[] reusingABuffer() {
         machine.transform(payload, reuseBuffer);
+        return reuseBuffer;
+    }
+
+    /** With a nonce, which costs one extra pass over the rotor offsets and nothing else. */
+    @Benchmark
+    public byte[] withANonce() {
+        machine.transform(payload, reuseBuffer, 42L);
         return reuseBuffer;
     }
 }

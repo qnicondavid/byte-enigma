@@ -1,8 +1,8 @@
 # Why the cipher falls
 
-Four separate weaknesses, in rough order of how much they cost an attacker. Three of them are
-inherent to the design and one is a mode-of-use bug that the code fixes but leaves visible, because
-watching it happen is more useful than reading about it.
+Five weaknesses, in rough order of how much they cost an attacker. Three are inherent to the design,
+one is a mode-of-use bug that the code fixes but leaves visible because watching it happen is more
+useful than reading about it, and the last is a missing feature rather than an attack.
 
 None of this is a disclosure. The cipher is a teaching artifact with a 32-bit key; being breakable is
 the specification.
@@ -18,10 +18,12 @@ is almost entirely the key schedule: building three rotors and two involutions m
 Fisher-Yates shuffles of 256 elements, which is 1,275 draws from a pseudorandom generator, and the
 transform afterwards is comparatively free.
 
-`CandidateBenchmark` splits it out. Rekeying alone against rekeying plus a full decrypt plus a
-language score is a difference of roughly a sixth, which is why the crib attack, decrypting
-sixteen bytes, is barely faster than the ciphertext-only one, which decrypts the whole message and
-then scores it. Neither can skip the key schedule, and the key schedule is the bill.
+`CandidateBenchmark` splits it out: rekeying alone, rekeying plus a crib window, rekeying plus a full
+decrypt, and rekeying plus a decrypt plus a language score. The gap between the first and the last
+grows with the message, because the message length is the only part of the work a crib gets to skip.
+On a short message the two attacks are close to indistinguishable, and even on a long one the crib is
+nowhere near the order of magnitude you would expect from decrypting sixteen bytes instead of two
+hundred. Neither can skip the key schedule, and the key schedule is the bill.
 
 That has a practical consequence for anyone trying to make the search faster: optimising the transform
 is worth less than it looks. The optimisation that mattered most was in the generator.

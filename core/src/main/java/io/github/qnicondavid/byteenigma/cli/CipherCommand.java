@@ -4,7 +4,6 @@ import io.github.qnicondavid.byteenigma.cipher.ByteEnigma;
 import io.github.qnicondavid.byteenigma.cipher.Envelope;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -22,7 +21,7 @@ final class CipherCommand {
     };
 
     /** Seals a message under a fresh nonce and writes it Base64-encoded unless told otherwise. */
-    static int seal(Arguments args, InputStream stdin, OutputStream stdout, PrintStream stderr) throws IOException {
+    static int seal(Arguments args, InputStream stdin, PrintStream stdout, PrintStream stderr) throws IOException {
         args.rejectUnknown(OPTIONS);
         ByteEnigma machine = machineFrom(args);
         byte[] plaintext = readInput(args, stdin);
@@ -35,7 +34,7 @@ final class CipherCommand {
     }
 
     /** Opens a sealed message. */
-    static int open(Arguments args, InputStream stdin, OutputStream stdout, PrintStream stderr) throws IOException {
+    static int open(Arguments args, InputStream stdin, PrintStream stdout, PrintStream stderr) throws IOException {
         args.rejectUnknown(OPTIONS);
         ByteEnigma machine = machineFrom(args);
         byte[] sealed = decodeInput(args, stdin);
@@ -54,7 +53,7 @@ final class CipherCommand {
      * <p>Running this twice with the same key returns the original bytes, which is convenient
      * and is also the problem.
      */
-    static int raw(Arguments args, InputStream stdin, OutputStream stdout, PrintStream stderr) throws IOException {
+    static int raw(Arguments args, InputStream stdin, PrintStream stdout, PrintStream stderr) throws IOException {
         args.rejectUnknown(OPTIONS);
         ByteEnigma machine = machineFrom(args);
         byte[] input = args.flag("binary") ? readInput(args, stdin) : decodeInput(args, stdin);
@@ -96,7 +95,7 @@ final class CipherCommand {
         }
     }
 
-    private static void writeOutput(Arguments args, OutputStream stdout, byte[] data, boolean binary)
+    private static void writeOutput(Arguments args, PrintStream stdout, byte[] data, boolean binary)
             throws IOException {
         byte[] encoded = binary
                 ? data

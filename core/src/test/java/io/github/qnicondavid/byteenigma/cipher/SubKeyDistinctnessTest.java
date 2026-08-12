@@ -9,12 +9,18 @@ import java.util.Set;
 import org.junit.jupiter.api.Test;
 
 /**
- * Every component of a machine is seeded from the same key through a different tag. If two tags
- * ever produced the same sub-key, two components would be wired identically and the machine
- * would quietly lose strength it looks like it has.
+ * Every component of a machine is seeded from the same key through a different tag.
  *
- * <p>Before the MurmurHash3 finaliser was applied, tags near zero produced sub-keys near each
- * other, and at small keys some collided outright.
+ * <p>The distinctness cases below hold for any injective mixing function, which the current one is,
+ * so they pass today by construction. They are here as a regression guard: replace {@code mix} with
+ * something that folds two tags together and they go red immediately.
+ *
+ * <p>{@link #adjacentKeysDoNotProduceAdjacentTurnoverPoints()} is the case that pins what the
+ * MurmurHash3 finaliser is actually for, and it fails without it. Distinctness was never the
+ * problem; correlation was. Without the finaliser {@code mix(key, tag)} is
+ * {@code key ^ (tag * constant)}, so consecutive keys give consecutive sub-keys, and a rotor's
+ * turnover point is {@code floorMod(subKey, 256)}. Neighbouring keys would then produce machines
+ * that step over each other in lockstep.
  */
 class SubKeyDistinctnessTest {
 
@@ -58,6 +64,26 @@ class SubKeyDistinctnessTest {
         for (int key : keys()) {
             assertNotEquals(ByteEnigma.mix(key, 1), ByteEnigma.mix(key, -1), "collided at key " + key);
         }
+    }
+
+    @Test
+    void adjacentKeysDoNotProduceAdjacentTurnoverPoints() {
+        int samples = 20_000;
+        int adjacent = 0;
+        for (int key = -samples / 2; key < samples / 2; key++) {
+            int here = Math.floorMod(ByteEnigma.mix(key, 1), 256);
+            int next = Math.floorMod(ByteEnigma.mix(key + 1, 1), 256);
+            int step = (next - here) & 0xFF;
+            if (step == 1 || step == 255) {
+                adjacent++;
+            }
+        }
+        // Chance alone puts this near 2/256 of the samples, about 156. Strip the finaliser and
+        // mix() becomes an exclusive-or with a constant, which moves the turnover point by one for
+        // every second key: half of them.
+        assertTrue(adjacent < samples / 32,
+                "turnover points track the key: " + adjacent + " of " + samples
+                        + " adjacent key pairs moved it by one");
     }
 
     @Test

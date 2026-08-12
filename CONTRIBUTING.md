@@ -46,9 +46,9 @@ instead; please keep that distinction.
 ## Building
 
 ```
-mvn test                     # 111 tests, about ten seconds
+mvn test                     # 121 tests, about ten seconds
 mvn -Pdist package           # core/target/byte-enigma.jar
-mvn -pl benchmarks package && java -jar benchmarks/target/benchmarks.jar
+mvn -pl benchmarks -am package && java -jar benchmarks/target/benchmarks.jar
 ```
 
 JDK 17 or newer. CI runs the tests on 17 and 21 and will not merge a red branch.

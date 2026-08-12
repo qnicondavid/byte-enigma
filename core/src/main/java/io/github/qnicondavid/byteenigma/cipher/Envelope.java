@@ -17,9 +17,9 @@ import java.util.Base64;
  * <p>It fixes keystream reuse. That is the whole of it.
  *
  * <ul>
- *   <li>The key is still 32 bits. A sweep of the entire keyspace takes about an hour on a
- *       laptop, and the nonce does not slow it down by one key, because the nonce travels in
- *       the clear and is not secret.</li>
+ *   <li>The key is still 32 bits. A sweep of the entire keyspace takes a few hours on a laptop,
+ *       and the nonce does not slow it down by one key, because the nonce travels in the clear
+ *       and is not secret.</li>
  *   <li>There is no authentication. Anyone can flip bits in transit and the recipient will
  *       decrypt the result without complaint.</li>
  *   <li>Nonces are drawn at random from 64 bits, so a key that seals more than a few billion

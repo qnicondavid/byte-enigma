@@ -51,9 +51,23 @@
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>exec-maven-plugin</artifactId>
-                <configuration>
-                    <mainClass>${main.class}</mainClass>
-                </configuration>
+                <!--
+                  Configured on a named execution rather than on the plugin, so that
+                  `mvn exec:java@demo` runs the demonstration while plain `mvn exec:java
+                  -Dexec.mainClass=...` still honours the class you asked for. Plugin-level
+                  configuration wins over the command line and would silently ignore it.
+                -->
+                <executions>
+                    <execution>
+                        <id>demo</id>
+                        <configuration>
+                            <mainClass>${main.class}</mainClass>
+                            <arguments>
+                                <argument>demo</argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>

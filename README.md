@@ -91,15 +91,17 @@ byte-enigma break   --crib "ATTACK AT DAWN" --at 0 --in message.b64
 
 **Quadgrams, ciphertext only.** No crib. The search decrypts under every key and keeps whichever
 result reads most like English, scored against a table of four-letter frequencies built from
-1.5 million words of public-domain prose. It assumes only that the plaintext is English, which is a
+about 670,000 words of public-domain prose. It assumes only that the plaintext is English, which is a
 far weaker assumption than knowing a fragment of it, and it is roughly how most real traffic was read.
 
 ```
 byte-enigma break --language --in message.b64 --top 5
 ```
 
-It is slower than the crib attack, but only by about a sixth. Both spend most of their time rebuilding
-the key schedule, which neither can avoid.
+It is slower than the crib attack, and how much slower depends on the message length, because that is
+the only part of the work the crib gets to skip. Both spend most of their time rebuilding the key
+schedule, which neither can avoid. [docs/keyspace-sweep.md](docs/keyspace-sweep.md) has the ratio
+measured over the full keyspace on one message.
 
 ## Using it as a library
 
@@ -176,9 +178,9 @@ Inside `core`:
 ## Building
 
 ```
-mvn test                     # 111 tests, about ten seconds
+mvn test                     # 121 tests, about ten seconds
 mvn -Pdist package           # builds core/target/byte-enigma.jar
-mvn -pl benchmarks package   # builds benchmarks/target/benchmarks.jar
+mvn -pl benchmarks -am package   # builds benchmarks/target/benchmarks.jar
 java -jar benchmarks/target/benchmarks.jar
 ```
 
@@ -187,7 +189,7 @@ is committed next to it. `QuadgramTableReproducibilityTest` fails the build if t
 so a derived file cannot quietly become a blob nobody can rebuild. To change the corpus:
 
 ```
-mvn -q -pl core compile exec:java -Dexec.mainClass=io.github.qnicondavid.byteenigma.breaker.QuadgramTableBuilder
+mvn -q -pl core -am compile exec:java -Dexec.mainClass=io.github.qnicondavid.byteenigma.breaker.QuadgramTableBuilder
 ```
 
 Then commit the corpus and the regenerated table together.

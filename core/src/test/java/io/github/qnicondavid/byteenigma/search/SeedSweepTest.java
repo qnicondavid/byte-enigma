@@ -135,6 +135,73 @@ class SeedSweepTest {
         assertEquals(1L << 32, SeedSweep.KEYSPACE_END - SeedSweep.KEYSPACE_START);
     }
 
+    @Test
+    void anEvaluatorThatThrowsFailsTheSweepRatherThanShrinkingIt() {
+        SeedSweep<int[]> sweep = new SeedSweep<>(() -> new int[1], 1);
+        try {
+            sweep.sweepParallel(0, 400_000, new byte[8], (key, subject, ciphertext, scratch) -> {
+                if (key == 200_000) {
+                    throw new IllegalStateException("evaluator blew up");
+                }
+                return null;
+            }, 4);
+            assertTrue(false, "expected the sweep to fail");
+        } catch (IllegalStateException expected) {
+            assertTrue(expected.getMessage().contains("worker failed"), expected.getMessage());
+            assertNotNull(expected.getCause());
+        }
+    }
+
+    @Test
+    void keysTriedCountsWorkDoneRatherThanTheWidthOfTheRange() {
+        AtomicInteger seen = new AtomicInteger();
+        SeedSweep<int[]> sweep = new SeedSweep<>(() -> new int[1], 1);
+        SweepResult result = sweep.sweepParallel(-20_000, 20_000, new byte[8],
+                (key, subject, ciphertext, scratch) -> {
+                    seen.incrementAndGet();
+                    return null;
+                }, 4);
+        assertEquals(seen.get(), (int) result.keysTried());
+        assertEquals(40_000, result.keysTried());
+    }
+
+    @Test
+    void workerThreadsAreDaemonsSoTheyCannotHoldTheJvmOpen() throws InterruptedException {
+        AtomicInteger nonDaemon = new AtomicInteger();
+        SeedSweep<int[]> sweep = new SeedSweep<>(() -> new int[1], 1);
+        Thread watcher = new Thread(() -> {
+            for (int i = 0; i < 200; i++) {
+                Thread.getAllStackTraces().keySet().stream()
+                        .filter(t -> t.getName().startsWith("seed-sweep-") && !t.isDaemon())
+                        .forEach(t -> nonDaemon.incrementAndGet());
+                Thread.onSpinWait();
+            }
+        });
+        watcher.start();
+        sweep.sweepParallel(0, 400_000, new byte[8], closenessTo(1), 4);
+        watcher.join();
+        assertEquals(0, nonDaemon.get(), "sweep workers must not be able to keep the JVM alive");
+    }
+
+    @Test
+    void tiedScoresResolveTheSameWayEveryRun() {
+        SeedSweep<int[]> sweep = new SeedSweep<>(() -> new int[1], 3);
+        SeedEvaluator<int[]> everythingTies =
+                (key, subject, ciphertext, scratch) ->
+                        key % 1000 == 0 ? Candidate.of(key, 7.0, scratch, scratch.length) : null;
+
+        List<Integer> first = keysOf(sweep.sweepParallel(0, 200_000, new byte[8], everythingTies, 4));
+        for (int repeat = 0; repeat < 5; repeat++) {
+            assertEquals(first, keysOf(sweep.sweepParallel(0, 200_000, new byte[8], everythingTies, 4)),
+                    "tied candidates came back in a different order on repeat " + repeat);
+        }
+        assertEquals(List.of(0, 1000, 2000), first, "ties should break towards the lower key");
+    }
+
+    private static List<Integer> keysOf(SweepResult result) {
+        return result.best().stream().map(Candidate::key).toList();
+    }
+
     private static void assertRejected(Runnable action) {
         try {
             action.run();

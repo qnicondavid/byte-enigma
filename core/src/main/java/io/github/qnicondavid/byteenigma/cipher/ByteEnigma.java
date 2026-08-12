@@ -14,7 +14,7 @@ import java.nio.charset.StandardCharsets;
  *
  * <p><strong>This is not a secure cipher and is not meant to become one.</strong> The key is a
  * 32-bit integer, which the breaker in {@code io.github.qnicondavid.byteenigma.breaker} searches
- * end to end in about an hour. There is no authentication. The whole point of the project is
+ * end to end in a few hours on two cores, and proportionally faster on more. There is no authentication. The whole point of the project is
  * that the cipher is weak in ways you can watch.
  *
  * <h2>Two ways to run a message</h2>
@@ -245,7 +245,7 @@ public final class ByteEnigma {
      *
      * <p>This is the 32-bit finaliser from MurmurHash3. Without it, neighbouring keys hand
      * neighbouring sub-keys to the rotors, and two components can collide outright at small
-     * keys. {@code SubSeedDistinctnessTest} holds the line on that.
+     * keys. {@code SubKeyDistinctnessTest} holds the line on that.
      */
     static int mix(int base, int tag) {
         int h = base ^ (tag * 0x9E3779B9);
@@ -269,7 +269,7 @@ public final class ByteEnigma {
      * FNV-1a over the UTF-8 bytes of the passphrase, finalised through {@link #mix}.
      *
      * <p>An earlier version used {@code String.hashCode}, which collides on structure rather
-     * than on chance - {@code "Aa"} and {@code "BB"} land on the same value. {@code PasswordSeedTest}
+     * than on chance - {@code "Aa"} and {@code "BB"} land on the same value. {@code PassphraseKeyTest}
      * pins that those pairs now separate.
      */
     static int seedFromPassword(String password) {

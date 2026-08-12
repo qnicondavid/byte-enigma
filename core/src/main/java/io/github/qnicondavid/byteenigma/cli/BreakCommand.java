@@ -60,6 +60,7 @@ final class BreakCommand {
             }
             evaluator = new CribMatcher(fragment, offset);
             mode = "crib \"" + args.require("crib") + "\" at offset " + offset;
+            warnIfCribIsShort(stdout, fragment.length, to - from, topN);
         } else {
             evaluator = QuadgramSearch.usingBundledTable();
             mode = "ciphertext-only quadgram search";
@@ -109,6 +110,25 @@ final class BreakCommand {
         return new SweepProgressPrinter(stdout);
     }
 
+    /**
+     * A wrong key matches an L-byte crib with probability 256^-L, so a short crib over a wide range
+     * will produce hits that are not the key. Every crib hit scores exactly the crib length, so
+     * those hits tie with the real one and the leaderboard has no way to prefer it. Saying so
+     * beforehand is cheaper than letting someone act on a confident wrong answer.
+     */
+    private static void warnIfCribIsShort(PrintStream stdout, int cribLength, long range, int topN) {
+        double expectedFalseHits = range * Math.pow(2.0, -8.0 * cribLength);
+        if (expectedFalseHits <= 0.01) {
+            return;
+        }
+        stdout.printf("warning: a %d-byte crib is expected to match about %.3g wrong keys over this%n",
+                cribLength, expectedFalseHits);
+        stdout.println("         range by chance. Every crib hit scores the same, so a wrong one can");
+        stdout.println("         outrank the key. Use a longer crib, or --top " + Math.max(topN, 10)
+                + " and check the results yourself.");
+        stdout.println();
+    }
+
     private static void report(PrintStream stdout, SweepResult result, int topN) {
         stdout.println();
         stdout.println("keys tried:  " + result.keysTried());
@@ -122,6 +142,13 @@ final class BreakCommand {
             stdout.println("no candidate survived");
             return;
         }
+        long tiedAtTop = best.stream().filter(c -> c.score() == best.get(0).score()).count();
+        if (tiedAtTop > 1) {
+            stdout.println(tiedAtTop + " candidates tie for the top score, so the ordering between");
+            stdout.println("them is arbitrary. None of them is more likely than the others.");
+            stdout.println();
+        }
+
         int shown = Math.min(topN, best.size());
         for (int i = 0; i < shown; i++) {
             Candidate candidate = best.get(i);

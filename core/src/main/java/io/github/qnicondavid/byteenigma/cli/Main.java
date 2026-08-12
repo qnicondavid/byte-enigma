@@ -29,9 +29,9 @@ public final class Main {
             Arguments parsed = Arguments.parse(args, 1);
             return switch (command) {
                 case "demo" -> DemoCommand.run(parsed, out);
-                case "seal" -> CipherCommand.seal(parsed, System.in, System.out, err);
-                case "open" -> CipherCommand.open(parsed, System.in, System.out, err);
-                case "raw" -> CipherCommand.raw(parsed, System.in, System.out, err);
+                case "seal" -> CipherCommand.seal(parsed, System.in, out, err);
+                case "open" -> CipherCommand.open(parsed, System.in, out, err);
+                case "raw" -> CipherCommand.raw(parsed, System.in, out, err);
                 case "break" -> BreakCommand.run(parsed, System.in, out);
                 case "offsets" -> BreakCommand.offsets(parsed, System.in, out);
                 default -> {
@@ -40,7 +40,10 @@ public final class Main {
                     yield 2;
                 }
             };
-        } catch (Arguments.UsageException usage) {
+        } catch (Arguments.UsageException | IllegalArgumentException usage) {
+            // The library rejects nonsense with IllegalArgumentException. From the command line
+            // that is a user error with a fixable cause, not a crash, so it gets the same
+            // treatment as a malformed flag rather than a stack trace.
             err.println("error: " + usage.getMessage());
             err.println("run with --help for usage");
             return 2;
@@ -78,8 +81,9 @@ public final class Main {
                 INPUT AND OUTPUT
                   --in <file>          Read from a file instead of stdin.
                   --out <file>         Write to a file instead of stdout.
-                  --binary             Treat ciphertext as raw bytes rather than Base64. Plaintext
-                                       is always read and written as raw bytes.
+                  --binary             Treat the encrypted side as raw bytes rather than Base64.
+                                       Plaintext is always raw. For raw, which has no plaintext
+                                       side, it applies to both input and output.
                   --nonce <long>       Seal with a chosen nonce rather than a random one.
 
                 BREAKING

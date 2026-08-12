@@ -3,7 +3,9 @@ package io.github.qnicondavid.byteenigma.search;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.PriorityQueue;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
 /**
@@ -22,6 +24,13 @@ import java.util.function.Supplier;
  * a factory makes it impossible to accidentally share a mutable cipher across workers.
  *
  * <p>Instances are immutable and safe to reuse across sweeps.
+ *
+ * <h2>What the result counts</h2>
+ *
+ * <p>{@link SweepResult#keysTried()} is the number of keys workers actually finished, not the
+ * width of the range they were given. If an evaluator throws, the sweep stops the other workers
+ * and rethrows rather than returning a result that would claim coverage it does not have. A
+ * throughput figure from this class is always a figure for work that really happened.
  *
  * @param <T> what the evaluator rekeys and applies
  */
@@ -78,13 +87,15 @@ public final class SeedSweep<T> {
         Leaderboard board = new Leaderboard(topN);
         byte[] scratch = new byte[ciphertext.length];
         T subject = subjectFactory.get();
+        long tried = 0L;
         for (long key = from; key < to; key++) {
             Candidate candidate = evaluator.evaluate((int) key, subject, ciphertext, scratch);
             if (candidate != null) {
                 board.offer(candidate);
             }
+            tried++;
         }
-        return new SweepResult(board.drainDescending(), to - from, System.nanoTime() - began);
+        return new SweepResult(board.drainDescending(), tried, System.nanoTime() - began);
     }
 
     /** Sweeps {@code [from, to)} across every available processor. */
@@ -92,7 +103,12 @@ public final class SeedSweep<T> {
         return sweepParallel(from, to, ciphertext, evaluator, Runtime.getRuntime().availableProcessors());
     }
 
-    /** Sweeps {@code [from, to)} across {@code threads} workers. */
+    /**
+     * Sweeps {@code [from, to)} across {@code threads} workers.
+     *
+     * @throws IllegalStateException if a worker died or the calling thread was interrupted; in
+     *         either case the other workers are stopped first
+     */
     public SweepResult sweepParallel(long from, long to, byte[] ciphertext, SeedEvaluator<T> evaluator, int threads) {
         requireRange(from, to);
         if (threads < 1) {
@@ -106,40 +122,63 @@ public final class SeedSweep<T> {
         long began = System.nanoTime();
         AtomicLong cursor = new AtomicLong(from);
         AtomicLong completed = new AtomicLong();
+        AtomicBoolean stop = new AtomicBoolean();
+        AtomicReference<Throwable> failure = new AtomicReference<>();
+
         List<Worker> workers = new ArrayList<>(threads);
         List<Thread> pool = new ArrayList<>(threads);
         for (int i = 0; i < threads; i++) {
-            Worker worker = new Worker(cursor, to, ciphertext, evaluator, completed);
+            Worker worker = new Worker(cursor, to, ciphertext, evaluator, completed, stop, failure);
+            Thread thread = new Thread(worker, "seed-sweep-" + i);
+            thread.setDaemon(true);
             workers.add(worker);
-            pool.add(new Thread(worker, "seed-sweep-" + i));
+            pool.add(thread);
         }
 
-        Thread reporter = startReporter(began, total, completed);
+        Thread reporter = startReporter(began, total, completed, stop);
         pool.forEach(Thread::start);
-        joinAll(pool);
-        if (reporter != null) {
-            reporter.interrupt();
+        try {
+            joinAll(pool);
+        } catch (InterruptedException interrupted) {
+            stop.set(true);
+            joinQuietly(pool);
+            stopReporter(reporter);
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException("sweep interrupted; workers stopped after "
+                    + completed.get() + " keys", interrupted);
         }
+        stopReporter(reporter);
         long elapsed = System.nanoTime() - began;
+
+        Throwable died = failure.get();
+        if (died != null) {
+            throw new IllegalStateException("a sweep worker failed after " + completed.get()
+                    + " of " + total + " keys", died);
+        }
 
         Leaderboard merged = new Leaderboard(topN);
         for (Worker worker : workers) {
             worker.localBest().forEach(merged::offer);
         }
+        long tried = completed.get();
         if (progress != null) {
-            progress.report(total, total, total / (elapsed / 1_000_000_000.0), elapsed / 1_000_000_000.0);
+            double seconds = elapsed / 1_000_000_000.0;
+            progress.report(tried, total, seconds > 0.0 ? tried / seconds : 0.0, seconds);
         }
-        return new SweepResult(merged.drainDescending(), total, elapsed);
+        return new SweepResult(merged.drainDescending(), tried, elapsed);
     }
 
-    private Thread startReporter(long began, long total, AtomicLong completed) {
+    private Thread startReporter(long began, long total, AtomicLong completed, AtomicBoolean stop) {
         if (progress == null) {
             return null;
         }
         Thread reporter = new Thread(() -> {
             try {
-                while (!Thread.currentThread().isInterrupted()) {
+                while (!stop.get()) {
                     Thread.sleep(progressIntervalMillis);
+                    if (stop.get()) {
+                        return;
+                    }
                     long done = completed.get();
                     double seconds = (System.nanoTime() - began) / 1_000_000_000.0;
                     progress.report(done, total, seconds > 0.0 ? done / seconds : 0.0, seconds);
@@ -153,6 +192,22 @@ public final class SeedSweep<T> {
         return reporter;
     }
 
+    /**
+     * Stops the reporter and waits for it to leave the listener, so the caller's closing report is
+     * the last one the listener sees rather than racing a stale one.
+     */
+    private void stopReporter(Thread reporter) {
+        if (reporter == null) {
+            return;
+        }
+        reporter.interrupt();
+        try {
+            reporter.join(1000L);
+        } catch (InterruptedException interrupted) {
+            Thread.currentThread().interrupt();
+        }
+    }
+
     private final class Worker implements Runnable {
 
         private final AtomicLong cursor;
@@ -160,35 +215,44 @@ public final class SeedSweep<T> {
         private final byte[] ciphertext;
         private final SeedEvaluator<T> evaluator;
         private final AtomicLong completed;
+        private final AtomicBoolean stop;
+        private final AtomicReference<Throwable> failure;
         private final Leaderboard best = new Leaderboard(topN);
         private final byte[] scratch;
 
-        private Worker(AtomicLong cursor, long end, byte[] ciphertext,
-                       SeedEvaluator<T> evaluator, AtomicLong completed) {
+        private Worker(AtomicLong cursor, long end, byte[] ciphertext, SeedEvaluator<T> evaluator,
+                       AtomicLong completed, AtomicBoolean stop, AtomicReference<Throwable> failure) {
             this.cursor = cursor;
             this.end = end;
             this.ciphertext = ciphertext;
             this.evaluator = evaluator;
             this.completed = completed;
+            this.stop = stop;
+            this.failure = failure;
             this.scratch = new byte[ciphertext.length];
         }
 
         @Override
         public void run() {
-            T subject = subjectFactory.get();
-            while (true) {
-                long chunkStart = cursor.getAndAdd(CHUNK);
-                if (chunkStart >= end) {
-                    return;
-                }
-                long chunkEnd = Math.min(chunkStart + CHUNK, end);
-                for (long key = chunkStart; key < chunkEnd; key++) {
-                    Candidate candidate = evaluator.evaluate((int) key, subject, ciphertext, scratch);
-                    if (candidate != null) {
-                        best.offer(candidate);
+            try {
+                T subject = subjectFactory.get();
+                while (!stop.get()) {
+                    long chunkStart = cursor.getAndAdd(CHUNK);
+                    if (chunkStart >= end) {
+                        return;
                     }
+                    long chunkEnd = Math.min(chunkStart + CHUNK, end);
+                    for (long key = chunkStart; key < chunkEnd; key++) {
+                        Candidate candidate = evaluator.evaluate((int) key, subject, ciphertext, scratch);
+                        if (candidate != null) {
+                            best.offer(candidate);
+                        }
+                    }
+                    completed.addAndGet(chunkEnd - chunkStart);
                 }
-                completed.addAndGet(chunkEnd - chunkStart);
+            } catch (Throwable thrown) {
+                failure.compareAndSet(null, thrown);
+                stop.set(true);
             }
         }
 
@@ -197,7 +261,14 @@ public final class SeedSweep<T> {
         }
     }
 
-    /** A bounded min-heap: the weakest kept candidate sits on top, ready to be evicted. */
+    /**
+     * A bounded min-heap: the weakest kept candidate sits on top, ready to be evicted.
+     *
+     * <p>Ties break towards the lower key, so a sweep that finds several equally good candidates
+     * returns the same ones whichever order the threads happened to find them in. That matters for
+     * a crib, where every hit scores exactly the crib length and ties are the normal case if the
+     * crib is short.
+     */
     private static final class Leaderboard {
 
         private final int capacity;
@@ -205,13 +276,13 @@ public final class SeedSweep<T> {
 
         private Leaderboard(int capacity) {
             this.capacity = capacity;
-            this.heap = new PriorityQueue<>(capacity, Candidate.BY_SCORE);
+            this.heap = new PriorityQueue<>(capacity, Candidate.WEAKEST_FIRST);
         }
 
         private void offer(Candidate candidate) {
             if (heap.size() < capacity) {
                 heap.offer(candidate);
-            } else if (Candidate.BY_SCORE.compare(candidate, heap.peek()) > 0) {
+            } else if (Candidate.WEAKEST_FIRST.compare(candidate, heap.peek()) > 0) {
                 heap.poll();
                 heap.offer(candidate);
             }
@@ -219,7 +290,7 @@ public final class SeedSweep<T> {
 
         private List<Candidate> drainDescending() {
             List<Candidate> ordered = new ArrayList<>(heap);
-            ordered.sort(Candidate.BY_SCORE.reversed());
+            ordered.sort(Candidate.WEAKEST_FIRST.reversed());
             return ordered;
         }
     }
@@ -233,13 +304,19 @@ public final class SeedSweep<T> {
         }
     }
 
-    private static void joinAll(List<Thread> pool) {
+    private static void joinAll(List<Thread> pool) throws InterruptedException {
+        for (Thread thread : pool) {
+            thread.join();
+        }
+    }
+
+    private static void joinQuietly(List<Thread> pool) {
         for (Thread thread : pool) {
             try {
-                thread.join();
-            } catch (InterruptedException interrupted) {
+                thread.join(2000L);
+            } catch (InterruptedException ignored) {
                 Thread.currentThread().interrupt();
-                throw new IllegalStateException("sweep interrupted while joining workers", interrupted);
+                return;
             }
         }
     }

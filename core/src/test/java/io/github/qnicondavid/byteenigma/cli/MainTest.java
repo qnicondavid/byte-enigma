@@ -6,6 +6,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import org.junit.jupiter.api.Test;
 
 /** The command line answers for itself, and says so when it cannot. */
@@ -57,6 +59,78 @@ class MainTest {
         Run run = invoke("demo", "--thredz", "2");
         assertEquals(2, run.status());
         assertTrue(run.err().contains("unknown option"), run.err());
+    }
+
+    @Test
+    void sealingAndOpeningRoundTripThroughAFile() throws Exception {
+        Path plain = Files.createTempFile("byte-enigma", ".txt");
+        Path sealed = Files.createTempFile("byte-enigma", ".b64");
+        try {
+            Files.writeString(plain, "attack at dawn", StandardCharsets.UTF_8);
+            assertEquals(0, invoke("seal", "--password", "hunter2",
+                    "--in", plain.toString(), "--out", sealed.toString()).status());
+
+            Run opened = invoke("open", "--password", "hunter2", "--in", sealed.toString());
+            assertEquals(0, opened.status());
+            assertEquals("attack at dawn", opened.out());
+        } finally {
+            Files.deleteIfExists(plain);
+            Files.deleteIfExists(sealed);
+        }
+    }
+
+    @Test
+    void sealingTheSameMessageTwiceGivesDifferentCiphertext() throws Exception {
+        Path plain = Files.createTempFile("byte-enigma", ".txt");
+        try {
+            Files.writeString(plain, "attack at dawn", StandardCharsets.UTF_8);
+            String first = invoke("seal", "--password", "hunter2", "--in", plain.toString()).out();
+            String second = invoke("seal", "--password", "hunter2", "--in", plain.toString()).out();
+            assertTrue(!first.equals(second), "seal must draw a fresh nonce each time");
+        } finally {
+            Files.deleteIfExists(plain);
+        }
+    }
+
+    @Test
+    void rawIsItsOwnInverseAndWarnsAboutReuse() throws Exception {
+        Path plain = Files.createTempFile("byte-enigma", ".txt");
+        Path cipher = Files.createTempFile("byte-enigma", ".bin");
+        try {
+            Files.writeString(plain, "ATTACK AT DAWN", StandardCharsets.UTF_8);
+            Run first = invoke("raw", "--binary", "--key", "99",
+                    "--in", plain.toString(), "--out", cipher.toString());
+            assertEquals(0, first.status());
+            assertTrue(first.err().contains("leak"), first.err());
+
+            Run second = invoke("raw", "--binary", "--key", "99", "--in", cipher.toString());
+            assertEquals("ATTACK AT DAWN", second.out());
+        } finally {
+            Files.deleteIfExists(plain);
+            Files.deleteIfExists(cipher);
+        }
+    }
+
+    @Test
+    void givingBothAKeyAndAPassphraseIsRefused() {
+        Run run = invoke("raw", "--key", "1", "--password", "hunter2");
+        assertEquals(2, run.status());
+        assertTrue(run.err().contains("not both"), run.err());
+    }
+
+    @Test
+    void argumentsTheLibraryRejectsComeBackAsUsageErrorsRatherThanStackTraces() {
+        String[][] bad = {
+            {"raw", "--key", "1", "--rotors", "0"},
+            {"break", "--language", "--threads", "0", "--in", "/dev/null"},
+            {"break", "--language", "--from", "5", "--to", "1", "--in", "/dev/null"},
+            {"break", "--language", "--from", "0", "--to", "99999999999", "--in", "/dev/null"},
+        };
+        for (String[] arguments : bad) {
+            Run run = invoke(arguments);
+            assertEquals(2, run.status(), String.join(" ", arguments));
+            assertTrue(run.err().startsWith("error: "), run.err());
+        }
     }
 
     @Test

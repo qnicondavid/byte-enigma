@@ -8,7 +8,7 @@ build if the two ever disagree.
 To rebuild after changing anything here:
 
 ```
-mvn -q compile exec:java -Dexec.mainClass=io.github.qnicondavid.byteenigma.breaker.QuadgramTableBuilder
+mvn -q -pl core -am compile exec:java -Dexec.mainClass=io.github.qnicondavid.byteenigma.breaker.QuadgramTableBuilder
 ```
 
 Then commit the corpus and the regenerated table together.
@@ -45,5 +45,5 @@ recognise. Verse and scripture were deliberately left out of the selection: they
 in the same upstream archive, and both skew the statistics hard towards spellings and
 constructions that no longer appear in ordinary English.
 
-Together they come to about 3.7 MB, roughly 1.5 million words, and produce 1,037,999 counted
-four-letter windows.
+Together they come to about 3.7 MB, 671,387 words, and produce 1,037,999 counted four-letter
+windows.

@@ -2,6 +2,7 @@ package io.github.qnicondavid.byteenigma.bench;
 
 import io.github.qnicondavid.byteenigma.breaker.CribMatcher;
 import io.github.qnicondavid.byteenigma.breaker.QuadgramScorer;
+import io.github.qnicondavid.byteenigma.breaker.QuadgramSearch;
 import io.github.qnicondavid.byteenigma.cipher.ByteEnigma;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.TimeUnit;
@@ -49,6 +50,8 @@ public class CandidateBenchmark {
 
     private ByteEnigma machine;
     private QuadgramScorer scorer;
+    private CribMatcher cribMatcher;
+    private QuadgramSearch quadgramSearch;
     private byte[] ciphertext;
     private byte[] scratch;
     private int cribOffset;
@@ -64,6 +67,8 @@ public class CandidateBenchmark {
         scratch = new byte[ciphertext.length];
         cribOffset = TEXT.indexOf(CRIB);
         cribEnd = cribOffset + CRIB.length();
+        cribMatcher = new CribMatcher(CRIB.getBytes(StandardCharsets.UTF_8), cribOffset);
+        quadgramSearch = new QuadgramSearch(scorer);
         key = 0;
     }
 
@@ -96,6 +101,25 @@ public class CandidateBenchmark {
         machine.rekey(key++);
         int length = machine.transform(ciphertext, scratch);
         blackhole.consume(scorer.score(scratch, length));
+    }
+
+    /**
+     * The crib evaluator exactly as the sweep calls it, including the Candidate it builds on a hit.
+     *
+     * <p>The four cases above measure the pieces. These two measure what the sweep actually invokes,
+     * which is the number any comparison between the attacks should be drawn from: the pieces leave
+     * out the candidate allocation, and the ciphertext-only path pays it on every key rather than
+     * only on survivors.
+     */
+    @Benchmark
+    public void cribEvaluator(Blackhole blackhole) {
+        blackhole.consume(cribMatcher.evaluate(key++, machine, ciphertext, scratch));
+    }
+
+    /** The ciphertext-only evaluator exactly as the sweep calls it. */
+    @Benchmark
+    public void languageEvaluator(Blackhole blackhole) {
+        blackhole.consume(quadgramSearch.evaluate(key++, machine, ciphertext, scratch));
     }
 
     /** The no-fixed-point filter, which rules out crib positions without trying any key at all. */

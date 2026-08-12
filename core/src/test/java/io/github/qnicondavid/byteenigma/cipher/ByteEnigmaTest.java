@@ -3,151 +3,135 @@ package io.github.qnicondavid.byteenigma.cipher;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import org.junit.jupiter.api.Test;
 
+/** The contract a caller can rely on: reciprocity, determinism, no fixed points, honest errors. */
 class ByteEnigmaTest {
 
-    private ByteEnigma machine(String key) {
-        return ByteEnigma.fromPassword(key, 3);
+    private static ByteEnigma machine(String passphrase) {
+        return ByteEnigma.fromPassword(passphrase, 3);
     }
 
-    @Test
-    void roundTripAscii() {
-        ByteEnigma m = machine("seed-A");
-        String msg = "Reciprocity check 123.";
-        assertEquals(msg, m.decrypt(m.encrypt(msg)));
-    }
-
-    @Test
-    void roundTripUnicode() {
-        ByteEnigma m = machine("unicode");
-        String msg = "cafe € 😀 你好";
-        assertEquals(msg, m.decrypt(m.encrypt(msg)));
-    }
-
-    @Test
-    void roundTripWithNegativeSeedPassword() {
-        ByteEnigma m = machine("negativeSeedTest");
-        String msg = "The quick brown fox.";
-        assertEquals(msg, m.decrypt(m.encrypt(msg)));
-    }
-
-    @Test
-    void roundTripEmptyString() {
-        ByteEnigma m = machine("seed-A");
-        assertEquals("", m.decrypt(m.encrypt("")));
-    }
-
-    @Test
-    void sameKeyIsDeterministic() {
-        String msg = "Determinism.";
-        assertEquals(machine("k").encrypt(msg), machine("k").encrypt(msg));
-    }
-
-    @Test
-    void differentKeysProduceDifferentCiphertext() {
-        String msg = "Determinism.";
-        assertNotEquals(machine("k1").encrypt(msg), machine("k2").encrypt(msg));
+    private static byte[] bytes(String text) {
+        return text.getBytes(StandardCharsets.UTF_8);
     }
 
     @Test
     void transformIsItsOwnInverse() {
-        ByteEnigma m = machine("bytes");
-        byte[] input = "binary\0\1\2ÿpayload".getBytes(StandardCharsets.UTF_8);
-        assertArrayEquals(input, m.transform(m.transform(input)));
+        ByteEnigma machine = machine("reciprocity");
+        byte[] input = bytes("Reciprocity check 123.");
+        assertArrayEquals(input, machine.transform(machine.transform(input)));
     }
 
     @Test
-    void noByteEncryptsToItself() {
-        ByteEnigma m = machine("no-fixed-point");
+    void roundTripsArbitraryBytesIncludingUtf8() {
+        ByteEnigma machine = machine("unicode");
+        byte[] input = bytes("cafe € 😀 你好");
+        assertArrayEquals(input, machine.transform(machine.transform(input)));
+    }
+
+    @Test
+    void roundTripsBinaryPayloads() {
+        ByteEnigma machine = machine("bytes");
+        byte[] input = bytes("binary\0\1\2ÿpayload");
+        assertArrayEquals(input, machine.transform(machine.transform(input)));
+    }
+
+    @Test
+    void roundTripsTheEmptyMessage() {
+        ByteEnigma machine = machine("empty");
+        assertEquals(0, machine.transform(new byte[0]).length);
+    }
+
+    @Test
+    void theSameKeyAlwaysProducesTheSameCiphertext() {
+        byte[] input = bytes("Determinism.");
+        assertArrayEquals(machine("k").transform(input), machine("k").transform(input));
+    }
+
+    @Test
+    void differentKeysProduceDifferentCiphertext() {
+        byte[] input = bytes("Determinism.");
+        assertNotEquals(
+                Arrays.toString(machine("k1").transform(input)),
+                Arrays.toString(machine("k2").transform(input)));
+    }
+
+    @Test
+    void noByteEverEncryptsToItself() {
+        ByteEnigma machine = machine("no-fixed-point");
         byte[] input = new byte[4096];
         for (int i = 0; i < input.length; i++) {
             input[i] = (byte) (i & 0xFF);
         }
-        byte[] output = m.transform(input);
+        byte[] output = machine.transform(input);
         for (int i = 0; i < input.length; i++) {
             assertNotEquals(input[i], output[i], "byte at index " + i + " mapped to itself");
         }
     }
 
     @Test
-    void transformIntoBufferMatchesAllocating() {
-        ByteEnigma m = machine("buffer");
-        byte[] input = "reuse this buffer".getBytes(StandardCharsets.UTF_8);
-        byte[] expected = m.transform(input);
+    void writingIntoABufferMatchesAllocatingOne() {
+        ByteEnigma machine = machine("buffer");
+        byte[] input = bytes("reuse this buffer");
+        byte[] expected = machine.transform(input);
         byte[] output = new byte[input.length + 32];
-        m.transform(input, output);
+        assertEquals(input.length, machine.transform(input, output));
         for (int i = 0; i < input.length; i++) {
             assertEquals(expected[i], output[i]);
         }
     }
 
     @Test
-    void transformRejectsUndersizedBuffer() {
-        ByteEnigma m = machine("buffer");
-        try {
-            m.transform(new byte[10], new byte[5]);
-            assertTrue(false, "expected IllegalArgumentException");
-        } catch (IllegalArgumentException expected) {
-        }
-    }
-
-    @Test
-    void rotorCountMustBePositive() {
-        try {
-            new ByteEnigma(123, 0);
-            assertTrue(false, "expected IllegalArgumentException");
-        } catch (IllegalArgumentException expected) {
-        }
-    }
-
-    @Test
-    void transformIntoBufferReturnsBytesWrittenAndLeavesTailUntouched() {
-        ByteEnigma m = machine("buffer");
-        byte[] input = "reuse this buffer".getBytes(StandardCharsets.UTF_8);
+    void writingIntoABufferLeavesTheTailAlone() {
+        ByteEnigma machine = machine("buffer");
+        byte[] input = bytes("reuse this buffer");
         byte[] output = new byte[input.length + 8];
-        java.util.Arrays.fill(output, (byte) 0x7F);
-        int written = m.transform(input, output);
-        assertEquals(input.length, written);
+        Arrays.fill(output, (byte) 0x7F);
+        assertEquals(input.length, machine.transform(input, output));
         for (int i = input.length; i < output.length; i++) {
-            assertEquals((byte) 0x7F, output[i], "tail byte " + i + " must be left untouched");
+            assertEquals((byte) 0x7F, output[i], "tail byte " + i + " was written");
         }
     }
 
     @Test
-    void decryptRejectsMalformedBase64() {
-        ByteEnigma m = machine("contract");
+    void rejectsAnUndersizedOutputBuffer() {
+        ByteEnigma machine = machine("buffer");
+        assertThrows(() -> machine.transform(new byte[10], new byte[5]));
+    }
+
+    @Test
+    void rejectsRotorCountsOutsideTheAllowedRange() {
+        assertThrows(() -> new ByteEnigma(123, 0));
+        assertThrows(() -> new ByteEnigma(123, -1));
+        assertThrows(() -> new ByteEnigma(1, ByteEnigma.MAX_ROTOR_COUNT + 1));
+    }
+
+    @Test
+    void acceptsRotorCountsUpToTheCap() {
+        assertEquals(ByteEnigma.MAX_ROTOR_COUNT,
+                new ByteEnigma(1, ByteEnigma.MAX_ROTOR_COUNT).rotorCount());
+    }
+
+    @Test
+    void reportsTheKeyItIsHolding() {
+        ByteEnigma machine = new ByteEnigma(4242, 3);
+        assertEquals(4242, machine.key());
+        machine.rekey(-7);
+        assertEquals(-7, machine.key());
+    }
+
+    private static void assertThrows(Runnable action) {
         try {
-            m.decrypt("###not base64###");
+            action.run();
             assertTrue(false, "expected IllegalArgumentException");
         } catch (IllegalArgumentException expected) {
-        }
-    }
-
-    @Test
-    void decryptOfForeignCiphertextDoesNotThrow() {
-        ByteEnigma m = machine("contract");
-        String foreign = java.util.Base64.getEncoder()
-                .encodeToString(new byte[] {(byte) 0xFF, (byte) 0xFF, (byte) 0xFF, (byte) 0xC0});
-        assertNotNull(m.decrypt(foreign));
-    }
-
-    @Test
-    void rotorCountAtCapIsAccepted() {
-        ByteEnigma m = new ByteEnigma(1, ByteEnigma.MAX_ROTOR_COUNT);
-        assertEquals(ByteEnigma.MAX_ROTOR_COUNT, m.rotors().size());
-    }
-
-    @Test
-    void rotorCountAboveCapThrows() {
-        try {
-            new ByteEnigma(1, ByteEnigma.MAX_ROTOR_COUNT + 1);
-            assertTrue(false, "expected IllegalArgumentException");
-        } catch (IllegalArgumentException expected) {
+            assertTrue(expected.getMessage() != null && !expected.getMessage().isBlank(),
+                    "exception should say what was wrong");
         }
     }
 }

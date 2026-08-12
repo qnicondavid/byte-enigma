@@ -1,10 +1,6 @@
 package io.github.qnicondavid.byteenigma.cipher;
 
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
-import java.util.Base64;
-import java.util.Collections;
-import java.util.List;
 
 /**
  * A reciprocal rotor cipher over the 256 byte values.
@@ -103,21 +99,6 @@ public final class ByteEnigma {
         }
         reflector.reseed(mix(key, -1));
         plugboard.reseed(mix(key, -2));
-    }
-
-    /** Base64 of the transform applied to the UTF-8 bytes of {@code text}. */
-    public String encrypt(String text) {
-        return Base64.getEncoder().encodeToString(transform(text.getBytes(StandardCharsets.UTF_8)));
-    }
-
-    /** The inverse of {@link #encrypt}. */
-    public String decrypt(String base64) {
-        return new String(transform(Base64.getDecoder().decode(base64)), StandardCharsets.UTF_8);
-    }
-
-    /** The rotors, in order. */
-    public List<Rotor> rotors() {
-        return Collections.unmodifiableList(Arrays.asList(rotors));
     }
 
     /** How many rotors this machine stacks. */

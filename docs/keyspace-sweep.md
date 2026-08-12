@@ -28,40 +28,46 @@ vxdco5h5HYwL5pmgUbzNRL4l1XNc4IfZajuS
 
 ## What has been run
 
-**A contiguous 234,881,024 keys, 5.47% of the range, from `Integer.MIN_VALUE` upwards.** Ciphertext
-only, no crib. 17.4 minutes of wall clock on two cores.
+**A contiguous 637,534,208 keys, 14.84% of the range, from `Integer.MIN_VALUE` upwards.**
+Ciphertext only, no crib. 46.2 minutes of wall clock on two cores, in seven runs, each stopped on a
+time budget and continued from the checkpoint the last one wrote.
 
-The true key is not inside that range, which is exactly what makes the result useful: those 234
-million keys are 234 million known-wrong answers, and the question worth asking of a language scorer
+The true key is not inside that range, and that is what makes the number worth having: those 637
+million keys are 637 million known-wrong answers, and the question worth asking of a language scorer
 is how close the best wrong answer gets.
 
 | | key | score |
 |---|---|---|
 | True key | 2083951437 | **-1620.38** |
-| Best of 234,881,024 wrong keys | -2097726795 | -1831.71 |
+| Best of 637,534,208 wrong keys | -1684917101 | -1828.24 |
 
-**A margin of 211.33 log-units, over a quarter of a billion attempts.** The runners-up are packed
-into a fifth of a log-unit of each other (-1831.71, -1831.88, -1831.89, -1831.96, -1832.09), which is
-what a distribution of noise looks like when nothing in it is English. The true key is not at the top
-of that distribution. It is nowhere near it.
+**A margin of 207.86 log-units, over six hundred million attempts.** The runners-up sit within four
+log-units of each other (-1828.24, -1830.70, -1831.48, -1831.71, -1831.88), which is what the top of
+a noise distribution looks like when nothing in it is English. The true key is not at the top of that
+distribution. It is not in it.
 
-Two of the wrong candidates are worth looking at, because they show what the scorer is actually
-rewarding. Key -2023463748 produced the fragment `THAtHEy` and key -2135655653 produced `ISO`.
-Neither is English, but four-letter windows like `THAT` and `THEY` are common enough that a handful
-of accidental hits lifts a candidate above pure noise. That is the entire signal the attack runs on,
-and 234 million samples say it is worth about 200 log-units less than the real thing.
+The wrong candidates show what the scorer is rewarding. Key -2023463748 produced the fragment
+`THAtHEy` and key -2135655653 produced `ISO`. Neither is English, but four-letter windows like `THAT`
+and `THEY` are common enough that two or three accidental hits lift a candidate a little above pure
+noise. That is the whole of the signal the attack runs on, and six hundred million samples say the
+best accident is worth about 200 log-units less than the real thing.
+
+Six hundred million is not four billion, and the tail of a distribution is where surprises live. What
+this run establishes is the shape and the scale of the gap, not that no key anywhere in the remaining
+85% closes it.
 
 ## What has not been run
 
-The remaining 94.53%. On this hardware the full range projects to **5.3 hours** at the measured rate
-of 224,514 keys/sec, and the environment these measurements were taken in cannot hold a process for
-that long.
+The remaining 85.16%. On this hardware the full range projects to **5.19 hours** at the measured rate
+of 229,762 keys/sec, and the environment these measurements were taken in cannot hold a process
+running for that long.
 
 So the honest statement is: the search recovers the key from a bounded range every time it is asked
-to, the rate is measured rather than modelled, the separation between the key and a quarter of a
-billion wrong answers is enormous, and nobody has yet watched it walk the entire space in one piece.
+to, the rate is measured rather than modelled, the separation between the key and six hundred million
+wrong answers is large and stable, and nobody has yet watched it walk the entire space in one piece.
 
-If you run it, the log below is the format to send.
+That last clause is the one this page exists to keep honest. If you run it to the end, the log format
+below is what to send.
 
 ## Reproducing, and finishing it
 
@@ -88,11 +94,11 @@ ciphertext: 234 bytes, sha-256 35de936d3adfe362
 mode:       ciphertext-only quadgram search
 range:      [-2147483648, 2147483648)  4294967296 keys
 threads:    2
-checkpoint: sweep.state  (resuming at -1912602624)
-resumed:    234,881,024 keys already done, 5.5% of the range
+checkpoint: sweep.state  (resuming at -1593835520)
+resumed:    553,648,128 keys already done, 12.9% of the range
 budget:     60.0 min, then stop and checkpoint
 
-    5.86%      251,658,240 keys   224,712 keys/sec  this run 77.4 s  total 18.7 min
+   13.28%      570,425,344 keys   222,401 keys/sec  this run 76.9 s  total 42.8 min
     ...
 ```
 
@@ -106,11 +112,11 @@ except an atomic cursor, so it scales about as well as a search can.
 
 | Attack | Measured | Full 2^32 at that rate |
 |---|---|---|
-| Ciphertext only, quadgram scoring | 224,514 keys/sec | 5.31 h |
+| Ciphertext only, quadgram scoring | 229,762 keys/sec | 5.19 h |
 | Known-plaintext crib, 18 bytes | 322,683 keys/sec | 3.70 h |
 
 The crib attack decrypts 18 bytes per key and the ciphertext-only attack decrypts 234 and then
-scores them, and the crib attack is 44% faster. Not ten times faster: 44%. Everything else is the
+scores them, and the crib attack is 40% faster. Not ten times faster: 40%. Everything else is the
 key schedule, which is 1,275 draws from a bounded generator per key and which neither attack can
 avoid.
 
@@ -124,7 +130,7 @@ more than any change to the transform: see
 
 ```
 byte-enigma: keyspace sweep
-commit:     2de789a
+commit:     1b37a30
 host cores: 2
 openjdk version "21.0.10" 2026-01-20
 ciphertext: 234 bytes, key 2083951437, 3 rotors, textbook mode
@@ -141,25 +147,26 @@ threads:    2
     2.73%      117,440,512 keys   225,015 keys/sec  this run 8.7 min  total 8.7 min
 stopped on budget at 117,440,512 of 4,294,967,296 keys (2.73%).
 
-    3.12%      134,217,728 keys   224,000 keys/sec  this run 78.1 s   total 10.0 min
-    3.52%      150,994,944 keys   224,180 keys/sec  this run 2.6 min  total 11.2 min
-    3.91%      167,772,160 keys   224,318 keys/sec  this run 3.9 min  total 12.5 min
-    4.30%      184,549,376 keys   224,401 keys/sec  this run 5.1 min  total 13.7 min
-    4.69%      201,326,592 keys   224,455 keys/sec  this run 6.4 min  total 15.0 min
-    5.08%      218,103,808 keys   224,489 keys/sec  this run 7.7 min  total 16.2 min
-    5.47%      234,881,024 keys   224,514 keys/sec  this run 8.9 min  total 17.4 min
-stopped on budget at 234,881,024 of 4,294,967,296 keys (5.47%).
+[five further runs, each resumed from the checkpoint and stopped on a budget, carried the
+ cursor from 2.73% to 12.89%; their per-segment lines were not captured]
 
-keys tried:  234,881,024
-elapsed:     17.4 min
-rate:        224,514 keys/sec (measured over the work actually done)
-full 2^32:   5.31 h at that rate
+   13.28%      570,425,344 keys   224,089 keys/sec  this run 55.9 s  total 42.4 min
+   13.67%      587,202,560 keys   225,491 keys/sec  this run 1.9 min  total 43.4 min
+   14.06%      603,979,776 keys   227,024 keys/sec  this run 2.8 min  total 44.3 min
+   14.45%      620,756,992 keys   228,576 keys/sec  this run 3.8 min  total 45.3 min
+stopped on budget at 637,534,208 of 4,294,967,296 keys (14.84%). Run the same command again
+to carry on from here.
 
-#1  key=-2097726795  score=-1831.71
-#2  key=-1947309478  score=-1831.88
-#3  key=-2142788969  score=-1831.89
-#4  key=-2135655653  score=-1831.96
-#5  key=-2023463748  score=-1832.09
+keys tried:  637,534,208
+elapsed:     46.2 min
+rate:        229,762 keys/sec (measured over the work actually done)
+full 2^32:   5.19 h at that rate
+
+#1  key=-1684917101  score=-1828.24
+#2  key=-1698706476  score=-1830.70
+#3  key=-1620196637  score=-1831.48
+#4  key=-2097726795  score=-1831.71
+#5  key=-1947309478  score=-1831.88
 ```
 
 For comparison, the true key scored -1620.38 on the same ciphertext, which you can check without
@@ -168,3 +175,16 @@ searching for it:
 ```
 byte-enigma break --language --in message.b64 --from 2083951437 --to 2083951438
 ```
+
+## The checkpoint from that run
+
+`docs/keyspace-sweep.state` is the file the run above left behind. Copy it next to `message.b64`,
+point `--checkpoint` at it, and the sweep carries on from where it stopped rather than starting
+over:
+
+```
+byte-enigma break --language --in message.b64 --top 10 --checkpoint keyspace-sweep.state
+```
+
+It resumes only if the ciphertext, the mode and the range all match what it recorded, so it cannot
+be pointed at a different message by accident.

@@ -104,7 +104,7 @@ far weaker assumption than knowing a fragment of it, and it is roughly how most 
 byte-enigma break --language --in message.b64 --top 5
 ```
 
-It is slower than the crib attack, but only by 44% on a 234-byte message, even though the crib looks
+It is slower than the crib attack, but only by 40% on a 234-byte message, even though the crib looks
 at 18 bytes and this looks at all 234. Both spend most of their time rebuilding the key schedule,
 which neither can avoid. [docs/keyspace-sweep.md](docs/keyspace-sweep.md) has both measurements.
 

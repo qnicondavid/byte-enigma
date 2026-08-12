@@ -1,0 +1,55 @@
+name: build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: JDK ${{ matrix.java }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        java: ['17', '21']
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK ${{ matrix.java }}
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ matrix.java }}
+          cache: maven
+
+      - name: Test
+        run: mvn -B -ntp verify
+
+      # The demo enciphers under a key it then throws away and recovers it twice. It exits
+      # non-zero if either route fails, so this is a real end-to-end check and not a smoke test.
+      - name: Run the demonstration
+        run: mvn -B -ntp -q -pl core exec:java -Dexec.mainClass=io.github.qnicondavid.byteenigma.cli.Main -Dexec.args=demo
+
+      - name: Build the runnable jar
+        run: mvn -B -ntp -q -Pdist package -DskipTests
+
+      - name: Check the jar runs from a clean shell
+        run: |
+          java -jar core/target/byte-enigma.jar --help > /dev/null
+          echo 'attack at dawn' | java -jar core/target/byte-enigma.jar seal --password hunter2 > sealed.b64
+          java -jar core/target/byte-enigma.jar open --password hunter2 --in sealed.b64 | grep -q 'attack at dawn'
+
+      - name: Upload test reports on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: surefire-reports-jdk${{ matrix.java }}
+          path: '**/target/surefire-reports/**'
+          retention-days: 7

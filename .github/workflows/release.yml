@@ -1,0 +1,49 @@
+name: release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Tag to build and release
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.tag || github.ref }}
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+
+      # A tag that cannot pass its own tests is not a release.
+      - name: Test
+        run: mvn -B -ntp verify
+
+      - name: Package
+        run: mvn -B -ntp -q -Pdist package -DskipTests
+
+      - name: Check the jar runs
+        run: java -jar core/target/byte-enigma.jar --help > /dev/null
+
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.event.inputs.tag || github.ref_name }}
+          generate_release_notes: true
+          files: |
+            core/target/byte-enigma.jar
+            core/target/byte-enigma-*-sources.jar
+            core/target/byte-enigma-*-javadoc.jar

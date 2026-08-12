@@ -6,6 +6,7 @@ import io.github.qnicondavid.byteenigma.cipher.ByteEnigma;
 import io.github.qnicondavid.byteenigma.search.Candidate;
 import io.github.qnicondavid.byteenigma.search.SeedEvaluator;
 import io.github.qnicondavid.byteenigma.search.SeedSweep;
+import io.github.qnicondavid.byteenigma.search.SweepCheckpoint;
 import io.github.qnicondavid.byteenigma.search.SweepResult;
 import java.io.IOException;
 import java.io.InputStream;
@@ -13,6 +14,7 @@ import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
 
@@ -23,10 +25,14 @@ final class BreakCommand {
     }
 
     private static final String[] BREAK_OPTIONS = {
-        "crib", "at", "language", "rotors", "in", "binary", "from", "to", "threads", "top", "progress"
+        "crib", "at", "language", "rotors", "in", "binary", "from", "to",
+        "threads", "top", "progress", "checkpoint", "segment", "for"
     };
 
     private static final String[] OFFSET_OPTIONS = {"crib", "in", "binary"};
+
+    /** Default keys per segment: about four minutes of work on two cores. */
+    private static final long DEFAULT_SEGMENT = 1L << 26;
 
     static int run(Arguments args, InputStream stdin, PrintStream stdout) throws IOException {
         args.rejectUnknown(BREAK_OPTIONS);
@@ -36,16 +42,34 @@ final class BreakCommand {
         int threads = args.intValue("threads", Runtime.getRuntime().availableProcessors());
         long from = args.longValue("from", SeedSweep.KEYSPACE_START);
         long to = args.longValue("to", SeedSweep.KEYSPACE_END);
+        long segment = Math.max(1L, args.longValue("segment", DEFAULT_SEGMENT));
+        long budgetSeconds = args.longValue("for", 0L);
+
+        // Validated here rather than left to the sweep, because a segmented run would otherwise
+        // just find an empty loop and report "no candidate survived" for what is a typo.
+        if (to < from) {
+            throw new Arguments.UsageException(
+                    "--to must be at least --from, got [" + from + ", " + to + ")");
+        }
+        if (to - from > (1L << 32)) {
+            throw new Arguments.UsageException("range is wider than the 2^32 keyspace");
+        }
+        if (threads < 1) {
+            throw new Arguments.UsageException("--threads must be at least 1 but was " + threads);
+        }
+        if (topN < 1) {
+            throw new Arguments.UsageException("--top must be at least 1 but was " + topN);
+        }
 
         boolean language = args.flag("language");
         boolean crib = args.has("crib");
         if (language == crib) {
-            throw new Arguments.UsageException(
-                    "choose exactly one of --crib <text> or --language");
+            throw new Arguments.UsageException("choose exactly one of --crib <text> or --language");
         }
 
         SeedEvaluator<ByteEnigma> evaluator;
         String mode;
+        String label;
         if (crib) {
             byte[] fragment = args.require("crib").getBytes(StandardCharsets.UTF_8);
             int offset = args.intValue("at", -1);
@@ -59,29 +83,95 @@ final class BreakCommand {
                 return 2;
             }
             evaluator = new CribMatcher(fragment, offset);
-            mode = "crib \"" + args.require("crib") + "\" at offset " + offset;
+            mode = "crib:" + offset + ":" + fragment.length;
+            label = "crib \"" + args.require("crib") + "\" at offset " + offset;
             warnIfCribIsShort(stdout, fragment.length, to - from, topN);
         } else {
             evaluator = QuadgramSearch.usingBundledTable();
-            mode = "ciphertext-only quadgram search";
+            mode = "language";
+            label = "ciphertext-only quadgram search";
         }
 
+        Path checkpointPath = args.has("checkpoint") ? Path.of(args.require("checkpoint")) : null;
+        String digest = SweepCheckpoint.digestOf(ciphertext);
+        SweepCheckpoint resumed = checkpointPath == null ? null : SweepCheckpoint.load(checkpointPath);
+        if (resumed != null) {
+            resumed.requireMatches(mode, digest, from, to);
+        }
+
+        long cursor = resumed == null ? from : resumed.cursor();
+        long keysTried = resumed == null ? 0L : resumed.keysTried();
+        long elapsedNanos = resumed == null ? 0L : resumed.elapsedNanos();
+        List<Candidate> best = resumed == null ? new ArrayList<>() : new ArrayList<>(resumed.best());
+
         long total = to - from;
-        stdout.println("ciphertext: " + ciphertext.length + " bytes");
-        stdout.println("mode:       " + mode);
+        stdout.println("ciphertext: " + ciphertext.length + " bytes, sha-256 " + digest.substring(0, 16));
+        stdout.println("mode:       " + label);
         stdout.println("range:      [" + from + ", " + to + ")  " + total + " keys");
         stdout.println("threads:    " + threads);
+        if (checkpointPath != null) {
+            stdout.println("checkpoint: " + checkpointPath
+                    + (resumed == null ? "  (new)" : "  (resuming at " + cursor + ")"));
+            stdout.printf("resumed:    %,d keys already done, %.1f%% of the range%n",
+                    keysTried, 100.0 * (resumed == null ? 0.0 : resumed.fraction()));
+        }
+        if (budgetSeconds > 0L) {
+            stdout.println("budget:     " + Durations.format(budgetSeconds) + ", then stop and checkpoint");
+        }
         stdout.println();
 
         SeedSweep<ByteEnigma> sweep = new SeedSweep<>(() -> new ByteEnigma(0, rotors), topN);
-        long progressSeconds = args.longValue("progress", total > (1L << 26) ? 30L : 0L);
-        if (progressSeconds > 0L) {
-            sweep = sweep.reportingTo(progressReporter(stdout), progressSeconds * 1000L);
+        long progressSeconds = args.longValue("progress", segment > (1L << 24) ? 60L : 0L);
+        if (progressSeconds > 0L && checkpointPath == null) {
+            sweep = sweep.reportingTo(new SweepProgressPrinter(stdout), progressSeconds * 1000L);
         }
 
-        SweepResult result = sweep.sweepParallel(from, to, ciphertext, evaluator, threads);
-        report(stdout, result, topN);
-        return result.top() == null ? 1 : 0;
+        long budgetNanos = budgetSeconds * 1_000_000_000L;
+        long spentThisRun = 0L;
+        boolean stoppedEarly = false;
+
+        while (cursor < to) {
+            long segmentEnd = Math.min(cursor + segment, to);
+            SweepResult result = sweep.sweepParallel(cursor, segmentEnd, ciphertext, evaluator, threads);
+
+            best.addAll(result.best());
+            best.sort(Candidate.WEAKEST_FIRST.reversed());
+            if (best.size() > topN) {
+                best = new ArrayList<>(best.subList(0, topN));
+            }
+            cursor = segmentEnd;
+            keysTried += result.keysTried();
+            elapsedNanos += result.elapsedNanos();
+            spentThisRun += result.elapsedNanos();
+
+            if (checkpointPath != null) {
+                new SweepCheckpoint(mode, digest, from, to, cursor, keysTried, elapsedNanos, best)
+                        .save(checkpointPath);
+                stdout.printf("  %6.2f%%  %,15d keys  %,8.0f keys/sec  this run %s  total %s%n",
+                        100.0 * (cursor - from) / total, keysTried,
+                        keysTried / (elapsedNanos / 1_000_000_000.0),
+                        Durations.format(spentThisRun / 1_000_000_000.0),
+                        Durations.format(elapsedNanos / 1_000_000_000.0));
+            }
+
+            if (budgetNanos > 0L && spentThisRun >= budgetNanos && cursor < to) {
+                stoppedEarly = true;
+                break;
+            }
+        }
+
+        stdout.println();
+        if (stoppedEarly) {
+            stdout.printf("stopped on budget at %,d of %,d keys (%.2f%%). Run the same command again%n",
+                    cursor - from, total, 100.0 * (cursor - from) / total);
+            stdout.println("to carry on from here.");
+            stdout.println();
+        }
+        report(stdout, keysTried, elapsedNanos, best, topN, cursor >= to);
+        if (stoppedEarly) {
+            return 3;
+        }
+        return best.isEmpty() ? 1 : 0;
     }
 
     /** Reports which crib positions survive the no-fixed-point rule, without trying any key. */
@@ -106,10 +196,6 @@ final class BreakCommand {
         return 0;
     }
 
-    private static SweepProgressPrinter progressReporter(PrintStream stdout) {
-        return new SweepProgressPrinter(stdout);
-    }
-
     /**
      * A wrong key matches an L-byte crib with probability 256^-L, so a short crib over a wide range
      * will produce hits that are not the key. Every crib hit scores exactly the crib length, so
@@ -129,15 +215,19 @@ final class BreakCommand {
         stdout.println();
     }
 
-    private static void report(PrintStream stdout, SweepResult result, int topN) {
-        stdout.println();
-        stdout.println("keys tried:  " + result.keysTried());
-        stdout.printf("elapsed:     %s%n", Durations.format(result.elapsedSeconds()));
-        stdout.printf("rate:        %,.0f keys/sec (measured on this run)%n", result.keysPerSecond());
-        stdout.printf("full 2^32:   %s at that rate%n", Durations.format(result.fullKeyspaceSeconds()));
+    private static void report(PrintStream stdout, long keysTried, long elapsedNanos,
+                              List<Candidate> best, int topN, boolean complete) {
+        double seconds = elapsedNanos / 1_000_000_000.0;
+        stdout.println("keys tried:  " + String.format("%,d", keysTried) + (complete ? "  (whole range)" : ""));
+        stdout.printf("elapsed:     %s%n", Durations.format(seconds));
+        stdout.printf("rate:        %,.0f keys/sec (measured over the work actually done)%n",
+                seconds > 0.0 ? keysTried / seconds : 0.0);
+        if (!complete) {
+            stdout.printf("full 2^32:   %s at that rate%n",
+                    Durations.format(seconds > 0.0 ? (1L << 32) / (keysTried / seconds) : Double.NaN));
+        }
         stdout.println();
 
-        List<Candidate> best = result.best();
         if (best.isEmpty()) {
             stdout.println("no candidate survived");
             return;
@@ -147,6 +237,10 @@ final class BreakCommand {
             stdout.println(tiedAtTop + " candidates tie for the top score, so the ordering between");
             stdout.println("them is arbitrary. None of them is more likely than the others.");
             stdout.println();
+        }
+        if (best.size() > 1) {
+            stdout.printf("margin:      %.2f between the first and the second%n%n",
+                    best.get(0).score() - best.get(1).score());
         }
 
         int shown = Math.min(topN, best.size());

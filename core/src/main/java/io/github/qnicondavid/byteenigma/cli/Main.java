@@ -94,13 +94,21 @@ public final class Main {
                   --to <key>           One past the last, default the end of the keyspace.
                   --threads <n>        Worker threads, default one per processor.
                   --top <n>            How many candidates to keep, default 1.
-                  --progress <seconds> How often to print progress, default 30 on long sweeps.
+                  --progress <seconds> How often to print progress, default 60 on long sweeps.
+                  --checkpoint <file>  Save progress after each segment, and resume from it if the
+                                       file already exists. A sweep of the whole keyspace takes
+                                       hours; this is what makes an interruption cheap.
+                  --segment <keys>     Keys between checkpoints, default 67108864.
+                  --for <seconds>      Stop after roughly this long and checkpoint. Exit code 3
+                                       means there is more range left. Run the same command again
+                                       to carry on.
 
                 EXAMPLES
                   byte-enigma demo
                   echo 'attack at dawn' | byte-enigma seal --password hunter2
                   byte-enigma break --crib ATTACK --at 0 --in message.b64
                   byte-enigma break --language --in message.b64 --top 5
+                  byte-enigma break --language --in message.b64 --checkpoint sweep.state --for 3600
 
                 This cipher is a teaching artifact with a 32-bit key and no authentication.
                 It is not secure and is not trying to be. See the README.""");

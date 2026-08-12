@@ -202,6 +202,8 @@ Then commit the corpus and the regenerated table together.
 - [docs/adr/0001-derived-wiring-over-historical-rotors.md](docs/adr/0001-derived-wiring-over-historical-rotors.md)
   explains why 256 symbols and key-derived wiring instead of the historical machine.
 - [CHANGELOG.md](CHANGELOG.md), including the two times the golden vector was deliberately rebased.
+- [SECURITY.md](SECURITY.md): what is worth reporting, given that the cipher being weak is the
+  specification rather than a finding.
 
 ## License
 

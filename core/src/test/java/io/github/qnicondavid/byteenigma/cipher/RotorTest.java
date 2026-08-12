@@ -5,42 +5,46 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
 
+/** One rotor in isolation: the two directions invert, and the offset behaves like an odometer wheel. */
 class RotorTest {
 
     @Test
-    void decryptInvertsEncryptAtEveryPosition() {
+    void backwardInvertsForwardAtEveryOffset() {
         Rotor rotor = new Rotor(42, 0);
-        for (int pos = 0; pos < 256; pos++) {
-            for (int c = 0; c < 256; c++) {
-                assertEquals(c, rotor.decrypt(rotor.encrypt(c)));
+        for (int offset = 0; offset < ByteEnigma.ALPHABET_SIZE; offset++) {
+            for (int value = 0; value < ByteEnigma.ALPHABET_SIZE; value++) {
+                assertEquals(value, rotor.backward(rotor.forward(value)),
+                        "not invertible at offset " + offset + ", value " + value);
             }
-            rotor.rotate();
+            rotor.advance();
         }
     }
 
     @Test
-    void rotateWrapsAfter256Steps() {
+    void theOffsetWrapsAfterAFullTurn() {
         Rotor rotor = new Rotor(7, 0);
         assertEquals(0, rotor.position());
-        for (int i = 0; i < 256; i++) {
-            rotor.rotate();
+        for (int i = 0; i < ByteEnigma.ALPHABET_SIZE; i++) {
+            rotor.advance();
         }
         assertEquals(0, rotor.position());
     }
 
     @Test
-    void resetReturnsToInitialPosition() {
+    void resetReturnsToTheKeyDerivedOffset() {
         Rotor rotor = new Rotor(7, 100);
-        rotor.rotate();
-        rotor.rotate();
+        rotor.advance();
+        rotor.advance();
         rotor.reset();
         assertEquals(100, rotor.position());
     }
 
     @Test
-    void turnoverPointStaysInRangeForNegativeSeed() {
-        Rotor rotor = new Rotor("negativeSeedTest".hashCode(), 0);
-        int tp = rotor.turnoverPoint();
-        assertTrue(tp >= 0 && tp < 256, "turnover point out of range: " + tp);
+    void theTurnoverPointStaysInRangeForNegativeSeeds() {
+        for (int seed : new int[] {-1, -255, -256, -257, Integer.MIN_VALUE}) {
+            int turnover = new Rotor(seed, 0).turnoverPoint();
+            assertTrue(turnover >= 0 && turnover < ByteEnigma.ALPHABET_SIZE,
+                    "turnover point " + turnover + " out of range at seed " + seed);
+        }
     }
 }

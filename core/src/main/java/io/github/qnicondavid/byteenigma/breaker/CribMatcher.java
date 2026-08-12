@@ -22,15 +22,17 @@ public final class CribMatcher implements SeedSweep.SeedEvaluator {
 
     @Override
     public Candidate evaluate(int seed, ByteEnigma machine, byte[] ciphertext, byte[] out) {
-        if (offset + crib.length > ciphertext.length) {
+        int end = offset + crib.length;
+        if (end > ciphertext.length) {
             return null;
         }
-        int len = machine.transform(ciphertext, out);
+        machine.transformWindow(ciphertext, out, offset, end);
         for (int j = 0; j < crib.length; j++) {
             if (out[offset + j] != crib[j]) {
                 return null;
             }
         }
+        int len = machine.transform(ciphertext, out);
         return Candidate.of(seed, crib.length, out, len);
     }
 

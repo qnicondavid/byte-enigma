@@ -31,11 +31,15 @@ is worth less than it looks. The optimisation that mattered most was in the gene
 instance can be shared safely across threads. The key schedule never shares one. Replacing it with the
 same algorithm over a plain field, bit for bit identical and pinned by `Lcg48EquivalenceTest`, is most
 of the difference; decrypting only the crib window rather than the whole message is the rest. Together
-they took the crib sweep from 105,452 keys/sec to 383,173 on the same two cores, and
-[keyspace-sweep.md](keyspace-sweep.md) records the split.
+they took the crib sweep from 105,452 keys/sec to 383,173 on the same two cores.
 
-[docs/keyspace-sweep.md](keyspace-sweep.md) reports what that means for the full range: not a
-projection, an actual run.
+The remaining cost is a detail of the generator rather than of the cipher. Fisher-Yates draws
+`nextInt(i + 1)` for `i` from 255 down to 1, so almost every bound is not a power of two, and
+`java.util.Random.nextInt(int)` handles those with a rejection loop built on an integer division.
+That division, 1,275 times per key, is where a sweep of this cipher spends most of its life.
+
+[keyspace-sweep.md](keyspace-sweep.md) reports what that means for the full range, and separates what
+has been measured from what has been projected from it.
 
 **Cost to the attacker:** a few hours on a laptop, once.
 **What would fix it:** a key wide enough that exhaustion is not a strategy, which would make the

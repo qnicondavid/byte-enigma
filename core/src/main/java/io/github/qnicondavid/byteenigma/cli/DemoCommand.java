@@ -18,8 +18,8 @@ import java.util.concurrent.ThreadLocalRandom;
  *
  * <p>The search runs over a window rather than the whole keyspace so that the demo finishes
  * while you are still looking at it. The window is the only thing that is scaled down: the same
- * {@code SeedSweep} handed the full range sweeps the full range, which
- * {@code docs/keyspace-sweep.md} reports from an actual run.
+ * {@code SeedSweep} handed the full range sweeps the full range. What that costs, measured rather
+ * than guessed, is in {@code docs/keyspace-sweep.md}.
  */
 final class DemoCommand {
 
@@ -53,8 +53,9 @@ final class DemoCommand {
         out.println("--------------------------------");
         out.println("  - The cipher is a teaching artifact. Do not use it for anything.");
         out.println("  - A 32-bit key is brute-forceable by design, and the search above is the proof.");
-        out.println("  - Rates are measured on this machine. Full-keyspace times below any measured");
-        out.println("    run are arithmetic from that rate; docs/keyspace-sweep.md reports a real one.");
+        out.println("  - Rates are measured on this machine. Any full-keyspace time you see here is");
+        out.println("    arithmetic from that rate, and says so; docs/keyspace-sweep.md keeps the two");
+        out.println("    apart and shows how far a real sweep has been taken.");
         out.println("  - Recovering the key is not recovering a passphrase. fromPassword runs FNV-1a");
         out.println("    over the UTF-8 bytes and keeps 32 bits, so passphrases collide by the billion.");
         out.println("  - The quadgram route assumes the plaintext is English. The crib route assumes");

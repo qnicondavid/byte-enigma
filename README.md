@@ -7,8 +7,8 @@
 A rotor cipher over bytes, and the code that breaks it.
 
 The cipher has a 32-bit key. That is the entire secret, and this repository contains a search that
-walks all four billion of them and gets the plaintext back. Both halves are the point: the interesting
-part of a rotor machine is not that it enciphers, it is how it dies.
+walks it and gets the plaintext back. Both halves are the point: the interesting part of a rotor
+machine is not that it enciphers, it is how it dies.
 
 ```
 $ byte-enigma demo
@@ -71,9 +71,10 @@ the key is thrown away. The search then recovers it twice: once with a crib, onc
 alone by scoring English quadgrams. It prints the measured rate both times.
 
 The demo searches a window of about a million keys so it finishes while you are watching. The window
-is the only thing scaled down. The same code handed the full range sweeps the full range, which is
-what [docs/keyspace-sweep.md](docs/keyspace-sweep.md) reports from an actual run rather than an
-extrapolation.
+is the only thing scaled down; the same code handed the full range sweeps the full range.
+[docs/keyspace-sweep.md](docs/keyspace-sweep.md) reports what that costs, measured on a run of a
+quarter of a billion keys, and is careful about the difference between what has been run and what has
+only been projected.
 
 ## The two attacks
 
@@ -103,10 +104,9 @@ far weaker assumption than knowing a fragment of it, and it is roughly how most 
 byte-enigma break --language --in message.b64 --top 5
 ```
 
-It is slower than the crib attack, and how much slower depends on the message length, because that is
-the only part of the work the crib gets to skip. Both spend most of their time rebuilding the key
-schedule, which neither can avoid. [docs/keyspace-sweep.md](docs/keyspace-sweep.md) has the ratio
-measured over the full keyspace on one message.
+It is slower than the crib attack, but only by 44% on a 234-byte message, even though the crib looks
+at 18 bytes and this looks at all 234. Both spend most of their time rebuilding the key schedule,
+which neither can avoid. [docs/keyspace-sweep.md](docs/keyspace-sweep.md) has both measurements.
 
 ## Using it as a library
 
@@ -203,7 +203,8 @@ Then commit the corpus and the regenerated table together.
 
 - [docs/why-the-cipher-falls.md](docs/why-the-cipher-falls.md): the five weaknesses, what each one
   costs the attacker, and which of them a nonce fixes.
-- [docs/keyspace-sweep.md](docs/keyspace-sweep.md): a full 2^32 sweep, actually run, with the raw log.
+- [docs/keyspace-sweep.md](docs/keyspace-sweep.md): what a real sweep costs, the raw log, and how far
+  it has actually been run.
 - [docs/adr/0001-derived-wiring-over-historical-rotors.md](docs/adr/0001-derived-wiring-over-historical-rotors.md)
   explains why 256 symbols and key-derived wiring instead of the historical machine.
 - [CHANGELOG.md](CHANGELOG.md), including the two times the golden vector was deliberately rebased.

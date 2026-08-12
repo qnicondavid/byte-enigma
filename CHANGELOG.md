@@ -18,7 +18,7 @@ name.
 - `ByteEnigma.transformWindow`, which steps the rotors through a prefix without doing the substitution
   work. The crib attack decrypts sixteen bytes per candidate instead of the whole message. Together
   with the generator change this took the crib sweep from 105,452 to 383,173 keys/sec on the same two
-  cores; `docs/keyspace-sweep.md` records how each part contributes.
+  cores, measured on a 117-byte message; `docs/keyspace-sweep.md` has the rates on a longer one.
 - `Lcg48`: the `java.util.Random` algorithm over a plain field instead of an `AtomicLong`. Bit for bit
   identical, enforced by `Lcg48EquivalenceTest` over several million draws. The key schedule draws
   1,275 values per candidate key and never shares a generator, so the compare-and-set was pure
@@ -26,8 +26,8 @@ name.
 - `data/corpus/`: the public-domain English the quadgram table is generated from, with provenance in
   `MANIFEST.md`. `QuadgramTableReproducibilityTest` fails the build if the shipped table stops matching
   what the corpus produces.
-- `docs/`: an architecture decision record, a page on how the cipher falls, and the log of a full 2^32
-  sweep.
+- `docs/`: an architecture decision record, a page on how the cipher falls, and the log of a keyspace
+  sweep with measured rates.
 - GitHub Actions running the tests on JDK 17 and 21, and a release workflow that attaches the jar.
 - MIT licence. There was none before, which meant nobody could legally use any of this.
 

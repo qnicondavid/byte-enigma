@@ -26,8 +26,8 @@ name.
 - `data/corpus/`: the public-domain English the quadgram table is generated from, with provenance in
   `MANIFEST.md`. `QuadgramTableReproducibilityTest` fails the build if the shipped table stops matching
   what the corpus produces.
-- `docs/`: an architecture decision record, a page on how the cipher falls, and the log of a keyspace
-  sweep with measured rates.
+- `docs/`: an architecture decision record, a page on how the cipher falls, and the log of a sweep of
+  the entire 2^32 keyspace in which the true key came first by 206 log-units.
 - GitHub Actions running the tests on JDK 17 and 21, and a release workflow that attaches the jar.
 - MIT licence. There was none before, which meant nobody could legally use any of this.
 

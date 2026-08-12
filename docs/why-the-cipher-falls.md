@@ -38,10 +38,10 @@ The remaining cost is a detail of the generator rather than of the cipher. Fishe
 `java.util.Random.nextInt(int)` handles those with a rejection loop built on an integer division.
 That division, 1,275 times per key, is where a sweep of this cipher spends most of its life.
 
-[keyspace-sweep.md](keyspace-sweep.md) reports what that means for the full range, and separates what
-has been measured from what has been projected from it.
+[keyspace-sweep.md](keyspace-sweep.md) has the whole range actually swept: 4,294,967,296 keys,
+1.48 hours on sixteen threads, the true key first by 206 log-units.
 
-**Cost to the attacker:** a few hours on a laptop, once.
+**Cost to the attacker:** an hour and a half on a desktop, once, measured.
 **What would fix it:** a key wide enough that exhaustion is not a strategy, which would make the
 second half of this repository impossible to demonstrate. That is a deliberate trade, recorded in
 [ADR 0001](adr/0001-derived-wiring-over-historical-rotors.md).

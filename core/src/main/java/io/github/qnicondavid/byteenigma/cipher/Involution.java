@@ -1,11 +1,10 @@
 package io.github.qnicondavid.byteenigma.cipher;
 
-import java.util.Random;
-
 public final class Involution {
 
     private final byte[] map = new byte[256];
     private final byte[] pool = new byte[256];
+    private final Lcg48 random = new Lcg48(0);
 
     public Involution(int seed) {
         reseed(seed);
@@ -15,9 +14,9 @@ public final class Involution {
         for (int i = 0; i < 256; i++) {
             pool[i] = (byte) i;
         }
-        Random rand = new Random(seed);
+        random.setSeed(seed);
         for (int i = 255; i > 0; i--) {
-            int j = rand.nextInt(i + 1);
+            int j = random.nextInt(i + 1);
             byte temp = pool[i];
             pool[i] = pool[j];
             pool[j] = temp;

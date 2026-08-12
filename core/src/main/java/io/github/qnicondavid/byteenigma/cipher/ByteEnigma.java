@@ -5,7 +5,6 @@ import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Collections;
 import java.util.List;
-import java.util.Random;
 
 public final class ByteEnigma {
 
@@ -14,15 +13,16 @@ public final class ByteEnigma {
     private final List<Rotor> rotors;
     private final Involution reflector;
     private final Involution plugboard;
+    private final Lcg48 positions = new Lcg48(0);
 
     public ByteEnigma(int seed, int rotorCount) {
         if (rotorCount < 1 || rotorCount > MAX_ROTOR_COUNT) {
             throw new IllegalArgumentException("rotorCount must be between 1 and " + MAX_ROTOR_COUNT);
         }
         List<Rotor> built = new ArrayList<>();
-        Random rand = new Random(mix(seed, 0));
+        positions.setSeed(mix(seed, 0));
         for (int i = 0; i < rotorCount; i++) {
-            int initialPosition = rand.nextInt(256);
+            int initialPosition = positions.nextInt(256);
             built.add(new Rotor(mix(seed, i + 1), initialPosition));
         }
         this.rotors = built;
@@ -31,9 +31,9 @@ public final class ByteEnigma {
     }
 
     public void rekey(int seed) {
-        Random rand = new Random(mix(seed, 0));
+        positions.setSeed(mix(seed, 0));
         for (int i = 0; i < rotors.size(); i++) {
-            int initialPosition = rand.nextInt(256);
+            int initialPosition = positions.nextInt(256);
             rotors.get(i).reseed(mix(seed, i + 1), initialPosition);
         }
         reflector.reseed(mix(seed, -1));

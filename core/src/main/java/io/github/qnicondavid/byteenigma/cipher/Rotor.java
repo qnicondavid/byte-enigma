@@ -1,11 +1,10 @@
 package io.github.qnicondavid.byteenigma.cipher;
 
-import java.util.Random;
-
 public final class Rotor {
 
     private final byte[] forwardMap = new byte[256];
     private final byte[] reverseMap = new byte[256];
+    private final Lcg48 random = new Lcg48(0);
     private int turnoverPoint;
     private int initialPosition;
     private int position;
@@ -15,16 +14,16 @@ public final class Rotor {
     }
 
     public void reseed(int seed, int initialPosition) {
-        Random rand = new Random(seed);
         this.turnoverPoint = Math.floorMod(seed, 256);
         this.initialPosition = Math.floorMod(initialPosition, 256);
         this.position = this.initialPosition;
+        random.setSeed(seed);
 
         for (int i = 0; i < 256; i++) {
             forwardMap[i] = (byte) i;
         }
         for (int i = 255; i > 0; i--) {
-            int j = rand.nextInt(i + 1);
+            int j = random.nextInt(i + 1);
             byte temp = forwardMap[i];
             forwardMap[i] = forwardMap[j];
             forwardMap[j] = temp;

@@ -1,6 +1,10 @@
 package io.github.qnicondavid.byteenigma.breaker;
 
 import io.github.qnicondavid.byteenigma.cipher.ByteEnigma;
+import io.github.qnicondavid.byteenigma.search.Candidate;
+import io.github.qnicondavid.byteenigma.search.SeedEvaluator;
+import io.github.qnicondavid.byteenigma.search.SeedSweep;
+import io.github.qnicondavid.byteenigma.search.SweepResult;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.concurrent.ThreadLocalRandom;
@@ -36,13 +40,13 @@ public final class BreakerDemo {
 
         printBanner(windowStart, windowEnd, plaintext.length, crib.length, cribOffset, cribAdmissibleHere);
 
-        SeedSweep sweep = new SeedSweep(ROTOR_COUNT, 1);
+        SeedSweep<ByteEnigma> sweep = new SeedSweep<>(() -> new ByteEnigma(0, ROTOR_COUNT), 1);
 
-        SeedSweep.SweepResult cribResult = sweep.sweepParallel(
+        SweepResult cribResult = sweep.sweepParallel(
                 windowStart, windowEnd, ciphertext, new CribMatcher(crib, cribOffset));
 
-        QuadgramSearch quadgramSearch = new QuadgramSearch(QuadgramScorer.fromResource());
-        SeedSweep.SweepResult quadgramResult = sweep.sweepParallel(
+        QuadgramSearch quadgramSearch = QuadgramSearch.usingBundledTable();
+        SweepResult quadgramResult = sweep.sweepParallel(
                 windowStart, windowEnd, ciphertext, quadgramSearch);
 
         boolean cribRecovered = reportMode(
@@ -83,21 +87,21 @@ public final class BreakerDemo {
         System.out.println();
     }
 
-    private static boolean reportMode(String label, SeedSweep.SweepResult result, int secretSeed, byte[] plaintext) {
+    private static boolean reportMode(String label, SweepResult result, int secretSeed, byte[] plaintext) {
         Candidate top = result.top();
-        boolean seedMatches = top != null && top.seed() == secretSeed;
+        boolean seedMatches = top != null && top.key() == secretSeed;
         boolean plaintextMatches = top != null && Arrays.equals(top.plaintext(), plaintext);
 
         System.out.println(label);
         if (top == null) {
             System.out.println("  no candidate recovered");
         } else {
-            System.out.println("  recovered seed:      " + top.seed());
+            System.out.println("  recovered seed:      " + top.key());
             System.out.println("  recovered plaintext: " + new String(top.plaintext(), StandardCharsets.UTF_8));
             System.out.println("  seed matches secret:      " + seedMatches);
             System.out.println("  plaintext matches source: " + plaintextMatches);
         }
-        System.out.println("  seeds tried:  " + result.seedsTried());
+        System.out.println("  seeds tried:  " + result.keysTried());
         System.out.printf("  elapsed:      %.3f s%n", result.elapsedSeconds());
         System.out.printf("  MEASURED rate: %,.0f keys/sec (timed on this run, not projected)%n", result.keysPerSecond());
         System.out.printf("  at that measured rate a full 2^32 sweep would take %s%n",
@@ -106,7 +110,7 @@ public final class BreakerDemo {
         return seedMatches && plaintextMatches;
     }
 
-    private static void printScaleNote(SeedSweep.SweepResult cribResult, SeedSweep.SweepResult quadgramResult) {
+    private static void printScaleNote(SweepResult cribResult, SweepResult quadgramResult) {
         double bestMeasuredRate = Math.max(cribResult.keysPerSecond(), quadgramResult.keysPerSecond());
         System.out.println("scale: the full keyspace is " + FULL_KEYSPACE_SIZE + " seeds (2^32).");
         System.out.printf("at the faster MEASURED rate above (%,.0f keys/sec) the whole space projects to %s.%n",
@@ -121,7 +125,7 @@ public final class BreakerDemo {
         System.out.println("  - a 2^32 seed space is brute-forceable by design; a real key would be far larger.");
         System.out.println("  - keys/sec figures above are MEASURED on this machine; full-space times are projections.");
         System.out.println("  - recovering the integer seed is NOT recovering a password: ByteEnigma.fromPassword");
-        System.out.println("    seeds from String.hashCode, which is lossy, so many passwords map to one seed.");
+        System.out.println("    runs FNV-1a over the UTF-8 bytes and keeps 32 bits, so passphrases collide.");
         System.out.println("  - mode 2 (quadgram) assumes the plaintext is natural-language English.");
     }
 

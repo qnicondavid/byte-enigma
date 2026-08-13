@@ -40,9 +40,9 @@ vxdco5h5HYwL5pmgUbzNRL4l1XNc4IfZajuS
 The first entry is the key. It was not given to the search, and the search was not told where to
 look; it walked every key in the space and this one scored highest.
 
-**The margin is 206.39 log-units.** The nine runners-up are packed into two log-units of each other,
-between -1826.76 and -1829.81, which is what the top of a noise distribution looks like when nothing
-in it is English. The key is not at the top of that distribution. It is not in it.
+**The margin is 206.39 log-units.** The nine runners-up span 3.05 log-units, from -1826.76 down to
+-1829.81, which is what the top of a noise distribution looks like when nothing in it is English.
+The key is not at the top of that distribution. It is not in it.
 
 Some of the runners-up show what the scorer is rewarding: key -1131398620 produced the fragment
 `APtIO`, key 628210969 produced `NEReNdiN`, and key -1321375626 produced `mUsTIReD`. Two or three
@@ -65,7 +65,10 @@ accumulates elapsed time across every segment, so when a run is resumed on diffe
 reported rate is a weighted average of both. It is a true statement about this particular run and a
 misleading one about any machine. The per-part rows above are the numbers that mean something.
 
-On the 16-thread machine alone, the full keyspace takes **1.48 hours**. On two cores it takes 5.19.
+Neither machine ran the whole range alone: the two-core one covered 14.84%, the 16-thread one
+85.16%. Projected from the per-part rates, the full keyspace takes **1.48 hours** on sixteen
+threads and 5.19 on two cores. Both are arithmetic rather than wall clocks; the only measured
+wall clock for the whole range is the 2.03 hours above, and it belongs to no single machine.
 
 For comparison, the known-plaintext crib attack measures 322,683 keys/sec on the two-core machine
 against 229,762 for the ciphertext-only one: **40% faster, not an order of magnitude**, despite

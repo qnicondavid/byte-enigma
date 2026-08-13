@@ -75,7 +75,8 @@ alone by scoring English quadgrams. It prints the measured rate both times.
 
 The demo searches a window of about a million keys so it finishes while you are watching. The window
 is the only thing scaled down; the same code handed the full range sweeps the full range, which is
-what [docs/keyspace-sweep.md](docs/keyspace-sweep.md) records, in 1.48 hours on sixteen threads.
+what [docs/keyspace-sweep.md](docs/keyspace-sweep.md) records: 4,294,967,296 keys in 2.03 hours
+across two machines, which projects to 1.48 hours on sixteen threads alone.
 
 ## The two attacks
 
@@ -184,7 +185,7 @@ Inside `core`:
 ## Building
 
 ```
-mvn test                     # 121 tests, about ten seconds
+mvn test                     # 133 tests, about ten seconds
 mvn -Pdist package           # builds core/target/byte-enigma.jar
 mvn -pl benchmarks -am package   # builds benchmarks/target/benchmarks.jar
 java -jar benchmarks/target/benchmarks.jar

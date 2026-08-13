@@ -1,0 +1,9 @@
+# The quadgram table is a derived file, and QuadgramTableReproducibilityTest compares it to what
+# the corpus regenerates: Files.readString on one side, a string built in memory on the other, and
+# an exact comparison between them. Checked out with CRLF, the two differ by a carriage return per
+# line and the build stops for a reason that has nothing to do with the corpus.
+#
+# data/corpus/MANIFEST.md says the line endings were normalised to LF "so the table generates
+# identically on every platform". Without this file that was true of what is committed and false
+# of what a Windows runner checks out.
+* text=auto eol=lf

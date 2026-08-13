@@ -36,7 +36,9 @@ Upstream: <https://github.com/nltk/nltk_data>, `packages/corpora/gutenberg.zip`.
 Project Gutenberg: <https://www.gutenberg.org>.
 
 The only change made on the way in was normalising line endings to LF and stripping trailing
-whitespace, so the table generates identically on every platform.
+whitespace, so the table generates identically on every platform. That holds for what is
+committed; `.gitattributes` is what makes it hold for what is checked out, which is what the
+reproducibility test actually reads.
 
 ## Why these eight
 

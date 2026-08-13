@@ -27,8 +27,40 @@ them, and one benchmark was measuring a workload the cipher never runs.
 - `Messages` holds the plaintext those two share, so they and `docs/keyspace-sweep.md` describe the
   same bytes.
 
+- `tools/`, a fourth module that draws the figures in `docs/` from data the repository already
+  commits. The margin figure is parsed out of the sweep checkpoint, and the key-reuse figure is
+  produced by running the cipher over two messages and comparing the ciphertexts, so neither carries
+  a number anyone typed. `DiagramReproducibilityTest` fails the build if a committed figure stops
+  matching what the data produces, which is the arrangement the quadgram table already lives under.
+- `ScoreHistogram` in the search, so a sweep can count every score into fixed bins rather than only
+  ranking the top ten. Workers fill their own copy and the copies merge once they stop, the same way
+  the leaderboard works. `SweepBenchmark` gained a parameter that measures what it costs, because
+  finding out after an hour of machine time is the wrong order.
+- `docs/using-the-search.md`, which is where the library half of the README went.
+
 ### Changed
 
+- The README tells the story before it recites the result. A reader who has never seen a rotor
+  machine now gets one explained, then why it can be broken, then what breaking it looked like, with
+  a figure at each of those three points. What it is not stays where it was, third, tightened.
+- The nine runners-up span 3.04 log-units, not the 3.05 these docs have carried since the sweep. The
+  wrong figure came from subtracting two numbers that had already been rounded to two decimals. The
+  diagram generator reads the checkpoint at full precision and disagreed on its first run.
+- The whole keyspace has been swept twice more, both ways, in one uninterrupted run each on sixteen
+  threads an hour apart: 62.2 minutes from the ciphertext alone and 40.8 minutes with an eighteen-byte
+  crib. The crib run returned one key and nothing else in 4,294,967,296, which is what the arithmetic
+  says it should and what nothing had checked. The ciphertext-only run returned a leaderboard
+  identical to the published one to the last decimal, two days and a batch of changes later, which
+  makes it a determinism check on everything in this release.
+- Every rate in `docs/keyspace-sweep.md` now comes from those two runs. The partial and resumed
+  figures they replace were about 1.6 times below what this machine does, and the page says so.
+- The crib attack is 49% faster over the whole keyspace, not the 40% two partial runs suggested, and
+  not the 31% one candidate costs in JMH. The gap between the last two is `SeedSweep` rather than the
+  cipher: `QuadgramSearch` allocates a `Candidate` and touches the leaderboard for every key,
+  `CribMatcher` returns `null` and allocates once in four billion.
+- A single uninterrupted run's headline rate is still not the rate the machine holds. Both runs
+  opened about 1.4 times faster than they settled, so the totals sit 2 to 4% above the sustained
+  figures. The page gives both and says to read the tail.
 - The two attacks do separate as the message grows, which these docs asserted for months on one
   hardcoded message. Measured over four: the crib route is cheaper by 8.2% at 80 bytes, 21.5% at 160,
   31.1% at 234 and 163% at 1024, and its own cost does not move at all, because it does not read the
@@ -57,7 +89,7 @@ The sweep of the whole keyspace, and four things that were not true.
 
 - A sweep of all 4,294,967,296 keys, ciphertext only, with the log and the checkpoint it left behind.
   1.0.0 shipped with 14.84% of the range swept and said so; this is the rest of it. The true key came
-  first, by 206.39 log-units, and the nine runners-up span 3.05 log-units of noise below it.
+  first, by 206.39 log-units, and the nine runners-up span 3.04 log-units of noise below it.
 - `.gitattributes`, pinning checked-out line endings to LF. `QuadgramTableReproducibilityTest`
   compares the shipped table to what the corpus regenerates, exactly, so a checkout that converts to
   CRLF fails a test about the corpus for a reason that has nothing to do with the corpus.
@@ -78,7 +110,7 @@ The sweep of the whole keyspace, and four things that were not true.
   input with status 1 rather than as the usage error with status 2 the test is about. They take a
   temporary empty file now.
 - Three published figures. The build instructions said 121 tests and the suite has 133. The
-  runners-up were described as packed into two log-units and they span 3.05. And 1.48 hours was
+  runners-up were described as packed into two log-units and they span 3.04. And 1.48 hours was
   presented as measured, in the README, in `why-the-cipher-falls.md` and in `DemoCommand`'s javadoc;
   it is arithmetic from the sixteen-thread rate over 85.16% of the range. The measured wall clock for
   the whole keyspace is 2.03 hours, split across two thread counts, and belongs to neither on its

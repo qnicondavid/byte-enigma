@@ -47,11 +47,11 @@ speedup from replacing it is 3.42x on the bounds the cipher actually uses, rathe
 two power-of-two figures suggest.
 
 [keyspace-sweep.md](keyspace-sweep.md) has the whole range actually swept: 4,294,967,296 keys in
-2.03 hours on one machine, two threads for the first 14.84% of the range and sixteen for the rest,
-the true key first by 206 log-units. Sixteen threads throughout project to 1.48 hours.
+62.2 minutes on sixteen threads in one uninterrupted run, the true key first by 206 log-units. Given
+an eighteen-byte crib the same range takes 40.8 minutes and returns that key and nothing else.
 
-**Cost to the attacker:** a couple of hours on a desktop, once. Measured: 2.03 hours across two
-thread counts; 1.48 hours is what sixteen threads throughout project to.
+**Cost to the attacker:** an hour on a desktop, once, and measured rather than projected: 62.2
+minutes from the ciphertext alone, 40.8 with a crib.
 **What would fix it:** a key wide enough that exhaustion is not a strategy, which would make the
 second half of this repository impossible to demonstrate. That is a deliberate trade, recorded in
 [ADR 0001](adr/0001-derived-wiring-over-historical-rotors.md).

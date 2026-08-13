@@ -3,6 +3,7 @@ package io.github.qnicondavid.byteenigma.bench;
 import io.github.qnicondavid.byteenigma.breaker.QuadgramScorer;
 import io.github.qnicondavid.byteenigma.breaker.QuadgramSearch;
 import io.github.qnicondavid.byteenigma.cipher.ByteEnigma;
+import io.github.qnicondavid.byteenigma.search.ScoreHistogram;
 import io.github.qnicondavid.byteenigma.search.SeedSweep;
 import io.github.qnicondavid.byteenigma.search.SweepResult;
 import java.util.concurrent.TimeUnit;
@@ -63,6 +64,14 @@ public class SweepBenchmark {
     @Param({"1", "2"})
     public int threads;
 
+    /**
+     * Whether the sweep also counts every score into a histogram. One array increment against a
+     * candidate that costs microseconds should be invisible, and this is where that gets checked
+     * rather than asserted, before an hour of machine time is spent on a run that uses it.
+     */
+    @Param({"false", "true"})
+    public boolean histogram;
+
     private byte[] ciphertext;
     private QuadgramSearch quadgramSearch;
 
@@ -77,6 +86,9 @@ public class SweepBenchmark {
     public void sweepScoringEnglish(Blackhole blackhole) {
         SeedSweep<ByteEnigma> sweep =
                 new SeedSweep<>(() -> new ByteEnigma(0, ROTOR_COUNT), LEADERBOARD);
+        if (histogram) {
+            sweep = sweep.recordingScoresInto(new ScoreHistogram(-3000.0, -1500.0, 0.25));
+        }
         SweepResult result = sweep.sweepParallel(0L, KEYS, ciphertext, quadgramSearch, threads);
         blackhole.consume(result);
     }

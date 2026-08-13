@@ -11,7 +11,128 @@ walks all four billion of them and gets the plaintext back. Both halves are the 
 part of a rotor machine is not that it enciphers, it is how it dies.
 
 The whole keyspace has been swept, ciphertext only, with no crib and no hint about where to look. The
-true key came first out of 4,294,967,296, by 206 log-units. [The log is in the repository.](docs/keyspace-sweep.md)
+true key came first out of 4,294,967,296, by 206 log-units, in 62.2 minutes on sixteen threads.
+[The log is in the repository.](docs/keyspace-sweep.md)
+
+```
+java -jar byte-enigma.jar demo
+```
+
+## What this is not
+
+**It is not an Enigma simulator.** It will not decrypt a wartime message and it will not match a
+historical test vector. The alphabet is 256 symbols rather than 26, the wirings come from the key
+rather than from the eight catalogue rotors, there are no ring settings, and the stepping is a plain
+odometer with no double-stepping anomaly. [ADR 0001](docs/adr/0001-derived-wiring-over-historical-rotors.md)
+records why.
+
+**It is not a secure cipher and is not on its way to becoming one.** A 32-bit key is small enough to
+enumerate in an afternoon, there is no authentication, and the passphrase derivation is a hash rather
+than a KDF. If you need real encryption, use libsodium, or `javax.crypto` with AES-GCM, or age.
+
+**It is not a portfolio demo of a cipher.** The library worth depending on is
+`io.github.qnicondavid.byteenigma.search`, which brute-forces a 32-bit keyspace across threads and
+knows nothing about rotors. That part is [documented separately](docs/using-the-search.md).
+
+## How the machine works
+
+A byte goes in on the left and comes out on the left, having made a round trip.
+
+![The signal path: a byte goes in through the plugboard, forward through three rotors, meets the reflector, and comes back out through the same rotors in reverse](docs/signal-path.svg)
+
+The plugboard swaps it for another byte. Three rotors each swap it again, one after another. Then it
+hits the reflector, which swaps it one last time and sends it back through the same three rotors in
+reverse order, then back through the plugboard, and out.
+
+Every one of those swaps is a permutation of all 256 byte values, and all of them are derived from
+the key. So the key does not choose a setting on a fixed machine. It builds the machine.
+
+Two things make the result more than a substitution cipher. The rotors turn: the first one advances
+after every byte, and when it passes a mark of its own it kicks the second one along, the way an
+odometer carries. So the same input byte at two positions meets two different permutations. And the
+reflector is chosen so that it never maps a byte to itself, which has consequences the next section
+is about.
+
+## Why it can be broken
+
+Two reasons, and the second is more interesting than the first.
+
+**The key is 32 bits.** Everything above comes out of one `int`, so there are 4,294,967,296 machines
+and you can build all of them. There is no cleverness to defeat here, only arithmetic: try every key,
+keep the one whose output looks like English. What that costs is a measured hour, not an estimate.
+
+**No byte ever encrypts to itself.** The reflector has no fixed points, and every rotor pass is built
+on top of it, so the whole machine inherits the property. That is what makes one setting both encrypt
+and decrypt, which is convenient. It is also a leak. If you think you know a fragment of the plaintext
+but not where it sits, you can rule out any position where the fragment and the ciphertext agree on a
+single byte, before trying one key. Bletchley Park leaned on this harder than on anything else.
+
+Over 256 symbols the discount is thin, and that is worth saying plainly, because it is one of the few
+places where this cipher is meaningfully weaker at being interesting than its ancestor.
+[why-the-cipher-falls.md](docs/why-the-cipher-falls.md) has the five weaknesses and what each one
+costs an attacker.
+
+## Breaking it
+
+The search decrypts under every key and keeps whichever result reads most like English, scored
+against a table of four-letter frequencies built from about 670,000 words of public-domain prose. It
+assumes the plaintext is English and nothing else, which is a far weaker assumption than knowing a
+fragment of it, and it is roughly how a lot of real traffic was read.
+
+```
+byte-enigma break --language --in message.b64 --top 10
+```
+
+Run over the whole range against a 234-byte message, it takes 62.2 minutes on sixteen threads. This
+is what came back.
+
+![A score axis. The nine next best keys out of four billion sit in one clump near minus 1828 and span 3.04 log-units between them. The true key sits far to the right at minus 1620.38, a margin of 206.39](docs/score-gap.svg)
+
+The nine runners-up are not near-misses. They are the top of a noise distribution, and a magnifying
+glass is needed to tell them apart at all. The key is not at the top of that distribution. It is not
+in it.
+
+If you do know a fragment, say a header or a name, the crib attack is faster:
+
+```
+byte-enigma offsets --crib "ATTACK AT DAWN" --in message.b64
+byte-enigma break --crib "ATTACK AT DAWN" --at 0 --in message.b64
+```
+
+The first command lists the positions the no-fixed-point rule leaves standing, before any key is
+tried. The second sweeps one of them. Over the whole keyspace this route came back in 40.8 minutes
+with one key and nothing else, which is 49% faster than reading the English. Not an order of
+magnitude, because both spend most of their time rebuilding the key schedule and neither can avoid
+it. [keyspace-sweep.md](docs/keyspace-sweep.md) has both runs and [benchmarks.md](docs/benchmarks.md)
+has where the time inside one candidate goes.
+
+## The leak that needs no key
+
+Recovering a key is the loud failure. Here is the quiet one, and it is the one that would bite a real
+user first.
+
+`transform(byte[], byte[])` takes the rotor offsets from the key alone and resets them at the start of
+every call. So the permutation applied to byte 4 depends only on the key and on the number 4. Encipher
+two messages under one key and, wherever the plaintexts agree at the same offset, the ciphertexts
+agree there too.
+
+![A row of 117 squares, one per byte position, with 107 of them lit. The lit squares are positions where two ciphertexts under one key carry the same byte. The ten unlit squares are exactly where the two plaintexts differ](docs/key-reuse.svg)
+
+Nobody attacked the key to produce that row. Two messages went past and the pattern fell out. Send
+enough traffic under one key and each position becomes an ordinary substitution cipher with a
+frequency distribution to attack, which is the depth attack, and it does not require breaking the key
+at all.
+
+The fix is a nonce. `transform(byte[], byte[], long)` derives the offsets from key and nonce together,
+and `Envelope` draws a fresh one per message and ships it in the clear ahead of the ciphertext. The
+textbook mode stays in the API on purpose: it is what the breaker attacks and what the demo
+demonstrates, and a repository about how ciphers fail should keep the failure reachable.
+
+Note what the nonce does not fix. It is not key material and it travels in the clear, so the search is
+exactly as fast against sealed messages as against raw ones.
+`BreakerEndToEndTest.aNonceDoesNotProtectTheKeyOnceItTravelsInTheClear` is that test.
+
+## What the demo shows
 
 ```
 $ byte-enigma demo
@@ -22,25 +143,15 @@ $ byte-enigma demo
     rate:       383,173 keys/sec, so 2^32 projects to 3.11 h
 ```
 
-![The signal path: a byte goes in through the plugboard, forward through three rotors, meets the reflector, and comes back out through the same rotors in reverse](docs/signal-path.svg)
+Two things, in order. First the key reuse above, with the matching positions counted for you, and
+then the same two messages sealed with a nonce so you can watch the correspondence vanish. Then a key
+is drawn at random, a message is enciphered under it, and the key is thrown away. The search recovers
+it twice, once with a crib and once from the ciphertext alone, and prints the measured rate both
+times.
 
-## What this is not
-
-**It is not an Enigma simulator.** It will not decrypt a wartime message and it will not match a
-historical test vector. The alphabet is 256 symbols rather than 26, the rotor wirings are derived
-from the key rather than taken from the eight catalogue rotors, there are no ring settings, and the
-stepping is a plain odometer with no double-stepping anomaly. It borrows Enigma's shape (plugboard,
-rotor stack, reflector, back out again) and nothing else. [ADR 0001](docs/adr/0001-derived-wiring-over-historical-rotors.md)
-records why.
-
-**It is not a secure cipher and is not on its way to becoming one.** A 32-bit key is small enough to
-enumerate in an afternoon, there is no authentication, and the passphrase derivation is a hash rather
-than a KDF. Do not put anything in it that you would mind seeing published. If you need real
-encryption, use libsodium, or `javax.crypto` with AES-GCM, or age.
-
-**It is not a portfolio demo of a cipher.** The library that might actually be worth depending on is
-`io.github.qnicondavid.byteenigma.search`, which brute-forces a 32-bit keyspace across threads and
-knows nothing about rotors. See [Using it as a library](#using-it-as-a-library).
+The demo searches a window of about a million keys so it finishes while you are watching. The window
+is the only thing scaled down. The same code handed the full range sweeps the full range, which is
+what [keyspace-sweep.md](docs/keyspace-sweep.md) records.
 
 ## Getting it
 
@@ -60,118 +171,24 @@ mvn -q -Pdist package
 java -jar core/target/byte-enigma.jar demo
 ```
 
-## What the demo shows
-
-Two things, in order.
-
-**Reusing a key without a nonce.** Two messages are enciphered under one key. Wherever the plaintexts
-agree, the ciphertexts agree, byte for byte, because the rotor offsets come from the key alone and so
-byte *i* of every message meets the same permutation. The demo counts the positions. Sealing with a
-nonce moves the offsets per message and the correspondence disappears.
-
-**Recovering a key nobody was told.** A key is drawn at random, a message is enciphered under it, and
-the key is thrown away. The search then recovers it twice: once with a crib, once from the ciphertext
-alone by scoring English quadgrams. It prints the measured rate both times.
-
-The demo searches a window of about a million keys so it finishes while you are watching. The window
-is the only thing scaled down; the same code handed the full range sweeps the full range, which is
-what [docs/keyspace-sweep.md](docs/keyspace-sweep.md) records: 4,294,967,296 keys in 2.03 hours on
-one machine, two threads for the first 14.84% and sixteen for the rest, which projects to 1.48 hours
-on sixteen threads throughout.
-
-## The two attacks
-
-**Crib, known plaintext.** You supply a fragment you expect to find and where you expect it. A wrong
-key fails on the first byte with probability 255/256, so the search decrypts only the window the crib
-covers rather than the whole message.
-
-Before any key is tried, most candidate positions can be thrown away for free. The cipher can never
-map a byte to itself, so if the crib and the ciphertext agree anywhere inside a candidate window, the
-crib cannot sit there. The same reciprocity that lets one setting both encrypt and decrypt is what
-hands the attacker that discount, and it is the flaw Bletchley Park leaned on hardest.
-
-```
-# which positions are still possible, before trying a single key
-byte-enigma offsets --crib "ATTACK AT DAWN" --in message.b64
-
-# then sweep one of them
-byte-enigma break --crib "ATTACK AT DAWN" --at 0 --in message.b64
-```
-
-**Quadgrams, ciphertext only.** No crib. The search decrypts under every key and keeps whichever
-result reads most like English, scored against a table of four-letter frequencies built from
-about 670,000 words of public-domain prose. It assumes only that the plaintext is English, which is a
-far weaker assumption than knowing a fragment of it, and it is roughly how most real traffic was read.
-
-```
-byte-enigma break --language --in message.b64 --top 5
-```
-
-It is slower than the crib attack, but only by 40% on a 234-byte message, even though the crib looks
-at 18 bytes and this looks at all 234. Both spend most of their time rebuilding the key schedule,
-which neither can avoid. [docs/keyspace-sweep.md](docs/keyspace-sweep.md) has both measurements.
-
 ## Using it as a library
 
-Available through [JitPack](https://jitpack.io/#qnicondavid/byte-enigma).
+Available through [JitPack](https://jitpack.io/#qnicondavid/byte-enigma). The part worth reusing is
+`SeedSweep`, which has no idea a cipher exists. It owns the range, the worker threads, the leaderboard
+and the clock; you supply a factory for whatever gets rekeyed and an evaluator that scores one
+candidate. Point it at something else and it will brute-force that instead.
 
-```xml
-<repositories>
-  <repository>
-    <id>jitpack.io</id>
-    <url>https://jitpack.io</url>
-  </repository>
-</repositories>
-
-<dependency>
-  <groupId>com.github.qnicondavid.byte-enigma</groupId>
-  <artifactId>byte-enigma</artifactId>
-  <version>v1.1.0</version>
-</dependency>
-```
-
-The part worth reusing is `SeedSweep`, which has no idea a cipher exists. It owns the range, the
-worker threads, the leaderboard and the clock; you supply a factory for whatever gets rekeyed and an
-evaluator that scores one candidate. Point it at something else and it will brute-force that instead.
-
-```java
-SeedSweep<MyThing> sweep = new SeedSweep<>(MyThing::new, 10);
-
-SweepResult result = sweep.sweepParallel(
-        SeedSweep.KEYSPACE_START, SeedSweep.KEYSPACE_END, ciphertext,
-        (key, thing, ciphertext, scratch) -> {
-            thing.rekey(key);
-            int length = thing.apply(ciphertext, scratch);
-            return Candidate.of(key, score(scratch, length), scratch, length);
-        });
-
-System.out.println(result.top().key() + " at " + result.keysPerSecond() + " keys/sec");
-```
-
-The factory rather than an instance is deliberate: the sweep needs one subject per thread, and taking
-a factory makes it impossible to hand it a mutable cipher that four threads then share.
-
-The cipher itself, if you want it anyway:
-
-```java
-ByteEnigma machine = ByteEnigma.fromPassword("hunter2", 3);
-
-byte[] sealed = Envelope.seal(machine, plaintext);   // fresh nonce, prepended in the clear
-byte[] opened = Envelope.open(machine, sealed);
-
-byte[] raw = machine.transform(plaintext);           // textbook mode, self-inverse, leaks on reuse
-```
-
-`ByteEnigma` is **not thread-safe**. Rotor offsets are mutable state and a transform walks them, so
-use one instance per thread.
+[Using the search](docs/using-the-search.md) has the coordinates, a worked example, and the cipher's
+own API.
 
 ## Layout
 
 ```
 core/                the cipher, the search, the breaker, the command line
 benchmarks/          JMH benchmarks, in the reactor build so they cannot rot unnoticed
+tools/               draws the figures in docs/ from the data the repository commits
 data/corpus/         public-domain English the quadgram table is generated from
-docs/                the decision record, how the cipher falls, the full keyspace sweep
+docs/                the decision record, how the cipher falls, the sweeps, the benchmarks
 ```
 
 Inside `core`:
@@ -192,24 +209,28 @@ mvn -pl benchmarks -am package   # builds benchmarks/target/benchmarks.jar
 java -jar benchmarks/target/benchmarks.jar
 ```
 
-The quadgram table under `core/src/main/resources` is generated, and the corpus it is generated from
-is committed next to it. `QuadgramTableReproducibilityTest` fails the build if the two ever disagree,
-so a derived file cannot quietly become a blob nobody can rebuild. To change the corpus:
+Two derived things are committed next to the data they come from, and a test fails the build if
+either drifts. The quadgram table under `core/src/main/resources` is generated from `data/corpus`,
+and the figures in `docs/` are drawn by `tools/` from the committed sweep checkpoints and from the
+cipher itself. To rebuild them:
 
 ```
 mvn -q -pl core -am compile exec:java -Dexec.mainClass=io.github.qnicondavid.byteenigma.breaker.QuadgramTableBuilder
+mvn -q -pl tools -am compile exec:java@diagrams
 ```
 
-Then commit the corpus and the regenerated table together.
+Then commit the source and the regenerated file together.
 
 ## Reading further
 
 - [docs/why-the-cipher-falls.md](docs/why-the-cipher-falls.md): the five weaknesses, what each one
   costs the attacker, and which of them a nonce fixes.
-- [docs/keyspace-sweep.md](docs/keyspace-sweep.md): the full 2^32 sweep, the log, and why the
-  headline rate figure is the one number on the page you should not quote.
+- [docs/keyspace-sweep.md](docs/keyspace-sweep.md): both full sweeps, their logs, and why a headline
+  rate figure is the one number on the page you should not quote.
 - [docs/benchmarks.md](docs/benchmarks.md): where the time inside one candidate goes, measured, and
   the two things these docs used to claim that the measurement does not support.
+- [docs/using-the-search.md](docs/using-the-search.md): the reusable half, with coordinates and an
+  example.
 - [docs/adr/0001-derived-wiring-over-historical-rotors.md](docs/adr/0001-derived-wiring-over-historical-rotors.md)
   explains why 256 symbols and key-derived wiring instead of the historical machine.
 - [CHANGELOG.md](CHANGELOG.md), including the two times the golden vector was deliberately rebased.

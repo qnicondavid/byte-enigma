@@ -77,9 +77,11 @@ So it was true. On a short message the two attacks really are close to each othe
 with the message and nothing else, because the message length is the only work a crib skips. What was
 missing was any reason to believe it.
 
-The sweep measured the crib route 40% faster on 234 bytes and this measures 31%. They are not the
-same experiment: that run used an 18-byte crib at offset 36, this one a 16-byte crib at offset 49, and
-`transformWindow` steps the rotors through everything before the crib either way.
+Two complete sweeps of the whole keyspace put the crib route 49% ahead, where this puts it 31%. The
+difference is the sweep rather than the evaluator: `QuadgramSearch` returns a `Candidate` for every
+key and `CribMatcher` returns `null`, so the ciphertext-only route also pays an allocation and a
+leaderboard comparison four billion times. [keyspace-sweep.md](keyspace-sweep.md) has that
+arithmetic.
 
 ## The generator, and the bound that was never tested
 
@@ -141,7 +143,7 @@ The transform costs about 5 ns a byte, and two harnesses agree on it: 1024 bytes
 and the same 1024 bytes take 5.18 us as the gap between `rekeyAndFullTransform` and `rekeyOnly`.
 
 One cell is a standing warning. At 65,536 bytes the nonce scores *higher* than the plain transform,
-which is impossible — it moves the starting offsets and adds work — and it did so in the previous run
+which is impossible, since it moves the starting offsets and adds work, and it did so in the previous run
 too, so it is not a one-off. Something about that particular measurement is wrong in a way the error
 bars do not show. Do not read any 2% difference on this page as a result.
 
@@ -155,11 +157,11 @@ bars do not show. Do not read any 2% difference on this page as a result.
 | 2 | 177.920 ±3.589 | 368,345 |
 
 One thread through the sweep costs 5.067 us a key against 4.929 for the evaluator alone. **`SeedSweep`
-adds 0.138 us per candidate, 2.8%** — the loop, the counters, the leaderboard comparison, all of it.
+adds 0.138 us per candidate, 2.8%**, and that covers the loop, the counters and the leaderboard.
 Two threads scale at 93% of one.
 
 That settles the question this benchmark was written for. The rates in
-[keyspace-sweep.md](keyspace-sweep.md) are far below what the same code does here — its two-thread
+[keyspace-sweep.md](keyspace-sweep.md) are far below what the same code does here. Its two-thread
 segment measured 229,762 keys/sec where two threads now do 368,345, 1.60 times more, and its
 sixteen-thread segment reached 25.5% of what sixteen unloaded single threads would give. Almost none
 of that is the sweep's software. What is left is the machine: six performance cores and ten

@@ -48,16 +48,18 @@ public final class SeedSweep<T> {
     private final int topN;
     private final SweepProgress progress;
     private final long progressIntervalMillis;
+    private final ScoreHistogram scores;
 
     /**
      * @param subjectFactory produces one subject per worker thread; must return a fresh instance each call
      * @param topN           how many candidates to keep, at least one
      */
     public SeedSweep(Supplier<T> subjectFactory, int topN) {
-        this(subjectFactory, topN, null, 0L);
+        this(subjectFactory, topN, null, 0L, null);
     }
 
-    private SeedSweep(Supplier<T> subjectFactory, int topN, SweepProgress progress, long progressIntervalMillis) {
+    private SeedSweep(Supplier<T> subjectFactory, int topN, SweepProgress progress,
+            long progressIntervalMillis, ScoreHistogram scores) {
         if (topN < 1) {
             throw new IllegalArgumentException("topN must be at least 1 but was " + topN);
         }
@@ -65,6 +67,7 @@ public final class SeedSweep<T> {
         this.topN = topN;
         this.progress = progress;
         this.progressIntervalMillis = progressIntervalMillis;
+        this.scores = scores;
     }
 
     /**
@@ -77,7 +80,24 @@ public final class SeedSweep<T> {
         if (intervalMillis < 1L) {
             throw new IllegalArgumentException("intervalMillis must be positive but was " + intervalMillis);
         }
-        return new SeedSweep<>(subjectFactory, topN, listener, intervalMillis);
+        return new SeedSweep<>(subjectFactory, topN, listener, intervalMillis, scores);
+    }
+
+    /**
+     * Returns a copy of this sweep that counts every score into {@code target} as well as ranking
+     * the best of them.
+     *
+     * <p>The leaderboard says which keys won. This says what they beat. Candidates the evaluator
+     * rejects outright are not counted, because they were never scored.
+     *
+     * <p>Costs one array increment per candidate, against a candidate that costs microseconds.
+     * {@code SweepBenchmark} measures it rather than assuming it.
+     */
+    public SeedSweep<T> recordingScoresInto(ScoreHistogram target) {
+        if (target == null) {
+            throw new IllegalArgumentException("pass a histogram or do not call this");
+        }
+        return new SeedSweep<>(subjectFactory, topN, progress, progressIntervalMillis, target);
     }
 
     /** Sweeps {@code [from, to)} on the calling thread. */
@@ -92,6 +112,9 @@ public final class SeedSweep<T> {
             Candidate candidate = evaluator.evaluate((int) key, subject, ciphertext, scratch);
             if (candidate != null) {
                 board.offer(candidate);
+                if (scores != null) {
+                    scores.record(candidate.score());
+                }
             }
             tried++;
         }
@@ -159,6 +182,9 @@ public final class SeedSweep<T> {
         Leaderboard merged = new Leaderboard(topN);
         for (Worker worker : workers) {
             worker.localBest().forEach(merged::offer);
+            if (scores != null) {
+                scores.merge(worker.localScores);
+            }
         }
         long tried = completed.get();
         if (progress != null) {
@@ -218,6 +244,7 @@ public final class SeedSweep<T> {
         private final AtomicBoolean stop;
         private final AtomicReference<Throwable> failure;
         private final Leaderboard best = new Leaderboard(topN);
+        private final ScoreHistogram localScores = scores == null ? null : scores.emptyCopy();
         private final byte[] scratch;
 
         private Worker(AtomicLong cursor, long end, byte[] ciphertext, SeedEvaluator<T> evaluator,
@@ -246,6 +273,9 @@ public final class SeedSweep<T> {
                         Candidate candidate = evaluator.evaluate((int) key, subject, ciphertext, scratch);
                         if (candidate != null) {
                             best.offer(candidate);
+                            if (localScores != null) {
+                                localScores.record(candidate.score());
+                            }
                         }
                     }
                     completed.addAndGet(chunkEnd - chunkStart);

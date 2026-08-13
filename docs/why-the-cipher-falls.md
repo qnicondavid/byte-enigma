@@ -78,8 +78,16 @@ roughly
 (1 - 1/A)^L
 ```
 
-which for a 16-byte crib over 256 symbols is 0.939, eliminating about 6% of positions. Run
-`byte-enigma offsets` and you will see a number close to that.
+which for a 16-byte crib over 256 symbols is 0.939, eliminating about 6% of positions.
+
+That is an expectation across ciphertexts rather than a promise about any one of them, and the
+spread is wide enough to matter. On the message in [keyspace-sweep.md](keyspace-sweep.md), with the
+18-byte crib that page uses, `byte-enigma offsets` throws away 6 positions out of 217. That is 2.8%
+against the 6.8% the formula gives for that length, and the whole difference is one count: a crib in
+uppercase ASCII draws on 11 distinct byte values, and only 4 of that ciphertext's 234 bytes carry one
+of them where 10 would be expected. Two standard deviations low, about a one-in-forty draw. Run the
+command on your own message and you will get your own number, which is the point of having the
+command.
 
 Six percent is a poor discount, and it is poor precisely because the alphabet is large. Over the
 historical 26-letter alphabet the same 16-character crib leaves `(25/26)^16 = 0.534` of the positions

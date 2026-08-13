@@ -27,6 +27,14 @@ import org.openjdk.jmh.infra.Blackhole;
  * {@code Lcg48EquivalenceTest} enforces, so the difference between these two numbers is the whole
  * of the trade.
  *
+ * <p>Two pairs run here and they are not measuring the same thing. The first draws at a bound of
+ * 256, a power of two, where {@code nextInt} multiplies and shifts and never enters the rejection
+ * loop, so what separates the two members of that pair is the compare-and-set and nothing else. The
+ * second draws at the bounds Fisher-Yates really asks for, {@code nextInt(i + 1)} for {@code i} from
+ * 255 down to 1, where almost every bound is not a power of two and the rejection loop and its
+ * integer division do run. The distance between the pairs is the only measurement of that division
+ * this project has; before it there was none, and the docs claimed it anyway.
+ *
  * <p>The class under measurement is package-private in the cipher, so this benchmark measures a
  * local copy of the same arithmetic. If the two ever drift the equivalence test in the core
  * module is the one that will notice, not this.
@@ -39,8 +47,11 @@ import org.openjdk.jmh.infra.Blackhole;
 @Fork(2)
 public class RandomSourceBenchmark {
 
-    /** One machine's worth of draws: five 256-element shuffles, 255 draws each. */
-    private static final int DRAWS_PER_KEY = 5 * 255;
+    /** One machine's worth of work: five 256-element shuffles. */
+    private static final int SHUFFLES = 5;
+
+    /** The draws those shuffles make, 255 apiece. */
+    private static final int DRAWS_PER_KEY = SHUFFLES * 255;
 
     private Random jdkRandom;
     private LocalLcg48 plainField;
@@ -53,6 +64,10 @@ public class RandomSourceBenchmark {
         seed = 0;
     }
 
+    /**
+     * 1,275 draws at a bound of 256, which is a power of two and skips the rejection loop. Against
+     * {@link #plainFieldLcg} this isolates the atomic.
+     */
     @Benchmark
     public void jdkRandom(Blackhole blackhole) {
         jdkRandom.setSeed(seed++);
@@ -63,12 +78,43 @@ public class RandomSourceBenchmark {
         blackhole.consume(total);
     }
 
+    /** {@link #jdkRandom}'s workload on the generator the cipher actually uses. */
     @Benchmark
     public void plainFieldLcg(Blackhole blackhole) {
         plainField.setSeed(seed++);
         int total = 0;
         for (int i = 0; i < DRAWS_PER_KEY; i++) {
             total += plainField.nextInt(256);
+        }
+        blackhole.consume(total);
+    }
+
+    /**
+     * The same 1,275 draws as {@link #jdkRandom}, at the bounds the shuffle asks for rather than at
+     * one convenient power of two. The difference between the two is what the rejection loop and its
+     * integer division cost on this generator.
+     */
+    @Benchmark
+    public void jdkRandomOverShuffleBounds(Blackhole blackhole) {
+        jdkRandom.setSeed(seed++);
+        int total = 0;
+        for (int shuffle = 0; shuffle < SHUFFLES; shuffle++) {
+            for (int i = 255; i > 0; i--) {
+                total += jdkRandom.nextInt(i + 1);
+            }
+        }
+        blackhole.consume(total);
+    }
+
+    /** {@link #jdkRandomOverShuffleBounds}'s workload on the generator the cipher actually uses. */
+    @Benchmark
+    public void plainFieldLcgOverShuffleBounds(Blackhole blackhole) {
+        plainField.setSeed(seed++);
+        int total = 0;
+        for (int shuffle = 0; shuffle < SHUFFLES; shuffle++) {
+            for (int i = 255; i > 0; i--) {
+                total += plainField.nextInt(i + 1);
+            }
         }
         blackhole.consume(total);
     }

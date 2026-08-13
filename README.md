@@ -75,8 +75,9 @@ alone by scoring English quadgrams. It prints the measured rate both times.
 
 The demo searches a window of about a million keys so it finishes while you are watching. The window
 is the only thing scaled down; the same code handed the full range sweeps the full range, which is
-what [docs/keyspace-sweep.md](docs/keyspace-sweep.md) records: 4,294,967,296 keys in 2.03 hours
-across two machines, which projects to 1.48 hours on sixteen threads alone.
+what [docs/keyspace-sweep.md](docs/keyspace-sweep.md) records: 4,294,967,296 keys in 2.03 hours on
+one machine, two threads for the first 14.84% and sixteen for the rest, which projects to 1.48 hours
+on sixteen threads throughout.
 
 ## The two attacks
 
@@ -207,6 +208,8 @@ Then commit the corpus and the regenerated table together.
   costs the attacker, and which of them a nonce fixes.
 - [docs/keyspace-sweep.md](docs/keyspace-sweep.md): the full 2^32 sweep, the log, and why the
   headline rate figure is the one number on the page you should not quote.
+- [docs/benchmarks.md](docs/benchmarks.md): where the time inside one candidate goes, measured, and
+  the two things these docs used to claim that the measurement does not support.
 - [docs/adr/0001-derived-wiring-over-historical-rotors.md](docs/adr/0001-derived-wiring-over-historical-rotors.md)
   explains why 256 symbols and key-derived wiring instead of the historical machine.
 - [CHANGELOG.md](CHANGELOG.md), including the two times the golden vector was deliberately rebased.

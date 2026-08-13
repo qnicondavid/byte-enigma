@@ -52,7 +52,8 @@ ciphertext-only attack rests on.
 
 ## Rates, and a caveat about this one
 
-The run was done in two parts on two different machines, resumed from a checkpoint.
+The run was done in two parts on one machine, resumed from a checkpoint: two threads for the first
+14.84% of the range, sixteen for the rest.
 
 | | keys | share | threads | wall clock | rate |
 |---|---|---|---|---|---|
@@ -60,24 +61,46 @@ The run was done in two parts on two different machines, resumed from a checkpoi
 | Second part | 3,657,433,088 | 85.16% | 16 | 75.6 min | **805,923 keys/sec** |
 | Reported total | 4,294,967,296 | 100% | mixed | 2.03 h | 587,309 keys/sec |
 
-**That 587,309 figure is not a machine's rate and should not be quoted as one.** A checkpoint
-accumulates elapsed time across every segment, so when a run is resumed on different hardware the
-reported rate is a weighted average of both. It is a true statement about this particular run and a
-misleading one about any machine. The per-part rows above are the numbers that mean something.
+**That 587,309 figure is not a rate anything ran at and should not be quoted as one.** A checkpoint
+accumulates elapsed time across every segment, so when a run is resumed at a different thread count
+the reported rate is a weighted average of both. It is a true statement about this particular run and
+a misleading one about any way of running the machine. The per-part rows are the ones that mean
+something.
 
-Neither machine ran the whole range alone: the two-core one covered 14.84%, the 16-thread one
-85.16%. Projected from the per-part rates, the full keyspace takes **1.48 hours** on sixteen
-threads and 5.19 on two cores. Both are arithmetic rather than wall clocks; the only measured
-wall clock for the whole range is the 2.03 hours above, and it belongs to no single machine.
+Neither part covered the whole range: two threads did 14.84%, sixteen did 85.16%. Projected from the
+per-part rates, the full keyspace takes **1.48 hours** on sixteen threads and 5.19 on two. Both are
+arithmetic rather than wall clocks; the only measured wall clock for the whole range is the 2.03
+hours above, and it belongs to neither thread count on its own.
 
-For comparison, the known-plaintext crib attack measures 322,683 keys/sec on the two-core machine
+For comparison, the known-plaintext crib attack measures 322,683 keys/sec on two threads
 against 229,762 for the ciphertext-only one: **40% faster, not an order of magnitude**, despite
 decrypting 18 bytes per key against 234. Everything else is the key schedule, which is 1,275 draws
-from a bounded generator per key and which neither attack can avoid. Most of those bounds are not
-powers of two, so each draw goes through the rejection loop in `java.util.Random.nextInt(int)` and
-costs an integer division. That, and not the cipher, is what a sweep of this cipher spends its time
-on, and it is why replacing the generator was worth more than any change to the transform. See
+from a bounded generator per key and which neither attack can avoid. Measured on one candidate it is
+78.1% of the ciphertext-only cost and 95.8% of the crib cost, which is why replacing the generator was
+worth more than any change to the transform. Most of those bounds are not powers of two, so each draw
+goes through the rejection loop in `java.util.Random.nextInt(int)` and costs an integer division;
+whether that division is the expensive part of the schedule is not something anything here measures.
+See [benchmarks.md](benchmarks.md) and
 [why-the-cipher-falls.md](why-the-cipher-falls.md#1-the-key-is-32-bits).
+
+## What these rates do not reconcile with
+
+[benchmarks.md](benchmarks.md) measures one candidate on one unloaded thread of this machine: 4.622
+us on a 160-byte message, which scales to about 5.04 us on the 234 bytes swept here, or 198,000
+keys/sec for one thread. The rates above are 114,881 per thread on two and 50,370 per thread on
+sixteen. A thread inside the sweep does between 1.7 and 3.9 times less work than a thread inside JMH,
+on the same machine, on the same message. The gap widens with the thread count: sixteen threads are
+3.51 times two threads, not eight.
+
+Three things could account for that and this repository measures none of them. The CPU is hybrid, six
+performance cores and ten efficiency-class ones, so sixteen threads average a rate no single thread
+ever runs at. Clocks fall under sustained full load. And `SeedSweep` does per-candidate work the
+evaluator benchmark does not: the loop, the counters, the leaderboard comparison. There is a
+benchmark of the evaluator and none of the sweep, so nothing here separates the hardware from the
+software.
+
+Until something does, the keys/sec on this page and the us/op on that one should not be converted
+into one another. Both are measured. They are measuring different things.
 
 ## Reproducing it
 

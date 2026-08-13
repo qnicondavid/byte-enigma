@@ -40,13 +40,20 @@ import org.openjdk.jmh.infra.Blackhole;
 @Fork(2)
 public class CandidateBenchmark {
 
-    private static final String TEXT =
-            "THE ENEMY FLEET WILL SAIL AT DAWN AND ATTACK THE SOUTHERN HARBOUR WITHOUT WARNING "
-            + "SO WE MUST DEFEND THE COAST AT ONCE AND SEND WORD BACK ALONG THE NORTHERN ROAD";
-    private static final String CRIB = "SOUTHERN HARBOUR";
-
     @Param({"3"})
     public int rotorCount;
+
+    /**
+     * The message length is the only part of a candidate that a crib gets to skip, so measuring at
+     * one length says nothing about how the two attacks separate as the message grows. This page
+     * used to claim they separate and had one length to say it with.
+     *
+     * <p>160 is what the first run used and is the control: it has to come back the same. 234 is
+     * the message the full keyspace sweep was run against, so these numbers and that page's
+     * keys/sec describe one job. 80 and 1024 bracket them.
+     */
+    @Param({"80", "160", "234", "1024"})
+    public int messageSize;
 
     private ByteEnigma machine;
     private QuadgramScorer scorer;
@@ -54,6 +61,7 @@ public class CandidateBenchmark {
     private QuadgramSearch quadgramSearch;
     private byte[] ciphertext;
     private byte[] scratch;
+    private byte[] cribBytes;
     private int cribOffset;
     private int cribEnd;
     private int key;
@@ -62,12 +70,12 @@ public class CandidateBenchmark {
     public void setup() {
         machine = new ByteEnigma(0, rotorCount);
         scorer = QuadgramScorer.fromResource();
-        ciphertext = new ByteEnigma(12345, rotorCount)
-                .transform(TEXT.getBytes(StandardCharsets.UTF_8));
+        ciphertext = new ByteEnigma(12345, rotorCount).transform(Messages.plaintext(messageSize));
         scratch = new byte[ciphertext.length];
-        cribOffset = TEXT.indexOf(CRIB);
-        cribEnd = cribOffset + CRIB.length();
-        cribMatcher = new CribMatcher(CRIB.getBytes(StandardCharsets.UTF_8), cribOffset);
+        cribOffset = Messages.CRIB_OFFSET;
+        cribEnd = cribOffset + Messages.CRIB.length();
+        cribBytes = Messages.CRIB.getBytes(StandardCharsets.UTF_8);
+        cribMatcher = new CribMatcher(cribBytes, cribOffset);
         quadgramSearch = new QuadgramSearch(scorer);
         key = 0;
     }
@@ -125,7 +133,6 @@ public class CandidateBenchmark {
     /** The no-fixed-point filter, which rules out crib positions without trying any key at all. */
     @Benchmark
     public void admissibilityFilter(Blackhole blackhole) {
-        blackhole.consume(CribMatcher.offsetAdmissible(
-                ciphertext, CRIB.getBytes(StandardCharsets.UTF_8), cribOffset));
+        blackhole.consume(CribMatcher.offsetAdmissible(ciphertext, cribBytes, cribOffset));
     }
 }

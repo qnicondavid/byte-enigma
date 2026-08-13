@@ -3,6 +3,40 @@
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versions follow
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- `docs/benchmarks.md`. The JMH suite has been run, for the first time. The key schedule is 78.1% of
+  a ciphertext-only candidate and 95.8% of a crib one, which is the claim the rest of the repository
+  rests on and which had never been measured. Two independent benchmarks agree on it to within 0.9%,
+  and the cost model these docs describe, five Fisher-Yates shuffles of about 0.69 us each, falls out
+  of the rotor-count sweep.
+- Three benchmarks aimed at the three gaps that page declares open. `RandomSourceBenchmark` gains a
+  pair drawing at the bounds Fisher-Yates asks for rather than at one convenient power of two, so the
+  rejection loop's integer division can be measured instead of asserted. `CandidateBenchmark` gains a
+  `messageSize` parameter over 80, 160, 234 and 1024, where 160 reproduces the first run's message
+  byte for byte and is kept as the control. `SweepBenchmark` drives the real `SeedSweep` rather than
+  the evaluator alone, which is the only way to tell its per-candidate overhead apart from hybrid
+  cores and sustained-load clocks. None of the three has been run yet.
+
+### Changed
+
+- Two claims in `docs/why-the-cipher-falls.md` are withdrawn rather than reworded, because the
+  benchmarks meant to support them do not. The integer division in `java.util.Random.nextInt(int)`'s
+  rejection loop was said to be where a sweep spends most of its life; `RandomSourceBenchmark` draws
+  at bound 256, a power of two, which skips that loop, so nothing here has ever measured it. And the
+  gap between the two attacks was said to grow with the message; `CandidateBenchmark` has one message
+  and no parameter for its size.
+- The sweep was described as having run on two different machines. It ran on one, at two thread
+  counts: two for the first 14.84% of the range, sixteen for the rest. Corrected in the README, in
+  both docs pages and in the 1.1.0 entry above, which repeated it while correcting something else.
+- `keyspace-sweep.md` gains a section on what its keys/sec do not reconcile with. A thread inside the
+  sweep does between 1.7 and 3.9 times less work than a thread inside JMH, on the same machine and
+  the same message, and the gap widens with the thread count. Hybrid cores, sustained-load clocks and
+  `SeedSweep`'s own per-candidate work would all account for some of it; nothing here separates them,
+  because the benchmarks measure the evaluator and there is no benchmark of the sweep.
+
 ## [1.1.0] - 2026-08-13
 
 The sweep of the whole keyspace, and four things that were not true.
@@ -35,8 +69,8 @@ The sweep of the whole keyspace, and four things that were not true.
   runners-up were described as packed into two log-units and they span 3.05. And 1.48 hours was
   presented as measured, in the README, in `why-the-cipher-falls.md` and in `DemoCommand`'s javadoc;
   it is arithmetic from the sixteen-thread rate over 85.16% of the range. The measured wall clock for
-  the whole keyspace is 2.03 hours across two machines, and belongs to no single machine either. Both
-  now say which they are.
+  the whole keyspace is 2.03 hours, split across two thread counts, and belongs to neither on its
+  own. Both now say which they are.
 - The suite time in the build instructions is a measurement, 4.9 s on one desktop, rather than "about
   ten seconds".
 

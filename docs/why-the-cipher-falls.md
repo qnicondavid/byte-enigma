@@ -19,11 +19,13 @@ Fisher-Yates shuffles of 256 elements, which is 1,275 draws from a pseudorandom 
 transform afterwards is comparatively free.
 
 `CandidateBenchmark` splits it out: rekeying alone, rekeying plus a crib window, rekeying plus a full
-decrypt, and rekeying plus a decrypt plus a language score. The gap between the first and the last
-grows with the message, because the message length is the only part of the work a crib gets to skip.
-On a short message the two attacks are close to indistinguishable, and even on a long one the crib is
-nowhere near the order of magnitude you would expect from decrypting sixteen bytes instead of two
-hundred. Neither can skip the key schedule, and the key schedule is the bill.
+decrypt, and rekeying plus a decrypt plus a language score. On its one message of 160 bytes, rekeying
+alone is 3.575 us and the whole ciphertext-only candidate is 4.577, so the key schedule is 78.1% of
+the bill and everything the message length touches is the other 22%. The crib route comes out 23.8%
+cheaper there, against the 40% the sweep measured on 234 bytes. Reading that difference as the effect
+of message length is the obvious guess and is not yet a measurement: the benchmark has one message and
+no parameter for its size. What is settled is that neither attack can skip the key schedule, and the
+key schedule is the bill. [benchmarks.md](benchmarks.md) has the table.
 
 That has a practical consequence for anyone trying to make the search faster: optimising the transform
 is worth less than it looks. The optimisation that mattered most was in the generator.
@@ -33,17 +35,22 @@ same algorithm over a plain field, bit for bit identical and pinned by `Lcg48Equ
 of the difference; decrypting only the crib window rather than the whole message is the rest. Together
 they took the crib sweep from 105,452 keys/sec to 383,173 on the same two cores.
 
-The remaining cost is a detail of the generator rather than of the cipher. Fisher-Yates draws
-`nextInt(i + 1)` for `i` from 255 down to 1, so almost every bound is not a power of two, and
-`java.util.Random.nextInt(int)` handles those with a rejection loop built on an integer division.
-That division, 1,275 times per key, is where a sweep of this cipher spends most of its life.
+Where the rest of the schedule goes is not settled. Fisher-Yates draws `nextInt(i + 1)` for `i` from
+255 down to 1, so almost every bound is not a power of two, and `java.util.Random.nextInt(int)`
+handles those with a rejection loop built on an integer division. This page used to say that
+division, 1,275 times per key, was where a sweep spends most of its life. Nothing in the repository
+measures it: `RandomSourceBenchmark` draws at bound 256, a power of two, which takes the branch that
+skips the loop. What is measured is the generator at that cheap bound, 0.997 us against a 3.608 us
+key schedule, and the other 2.6 us are the shuffling and whatever the harder bounds cost, in
+proportions nobody has separated. The claim stands withdrawn until a benchmark draws on the bounds
+the shuffle uses.
 
 [keyspace-sweep.md](keyspace-sweep.md) has the whole range actually swept: 4,294,967,296 keys in
-2.03 hours across two machines, the true key first by 206 log-units. Sixteen threads on their own
-project to 1.48 hours.
+2.03 hours on one machine, two threads for the first 14.84% of the range and sixteen for the rest,
+the true key first by 206 log-units. Sixteen threads throughout project to 1.48 hours.
 
-**Cost to the attacker:** a couple of hours on a desktop, once. Measured: 2.03 hours over two
-machines; 1.48 hours is what sixteen threads alone project to.
+**Cost to the attacker:** a couple of hours on a desktop, once. Measured: 2.03 hours across two
+thread counts; 1.48 hours is what sixteen threads throughout project to.
 **What would fix it:** a key wide enough that exhaustion is not a strategy, which would make the
 second half of this repository impossible to demonstrate. That is a deliberate trade, recorded in
 [ADR 0001](adr/0001-derived-wiring-over-historical-rotors.md).

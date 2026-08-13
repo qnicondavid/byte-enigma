@@ -125,7 +125,7 @@ Available through [JitPack](https://jitpack.io/#qnicondavid/byte-enigma).
 <dependency>
   <groupId>com.github.qnicondavid.byte-enigma</groupId>
   <artifactId>byte-enigma</artifactId>
-  <version>v1.0.0</version>
+  <version>v1.1.0</version>
 </dependency>
 ```
 

@@ -3,6 +3,43 @@
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versions follow
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2026-08-13
+
+The sweep of the whole keyspace, and four things that were not true.
+
+### Added
+
+- A sweep of all 4,294,967,296 keys, ciphertext only, with the log and the checkpoint it left behind.
+  1.0.0 shipped with 14.84% of the range swept and said so; this is the rest of it. The true key came
+  first, by 206.39 log-units, and the nine runners-up span 3.05 log-units of noise below it.
+- `.gitattributes`, pinning checked-out line endings to LF. `QuadgramTableReproducibilityTest`
+  compares the shipped table to what the corpus regenerates, exactly, so a checkout that converts to
+  CRLF fails a test about the corpus for a reason that has nothing to do with the corpus.
+  `data/corpus/MANIFEST.md` already claimed this held on every platform; it held for what is
+  committed and not for what is checked out.
+- `windows-latest` in the CI matrix, on both JDKs. It found that line-ending defect on its first run.
+
+### Fixed
+
+- The CI step that runs the demonstration had failed on every commit since it was moved onto a named
+  `exec` execution, because `-am` was added in the same change: it puts the parent POM in the
+  reactor, the goal runs against every module there, and the parent has no execution with that id.
+  Eleven commits went onto a red `build` workflow, the one 1.0.0 was cut from among them. The release
+  workflow does not run that step and was green, so the published artifacts were tested; the
+  end-to-end check simply was not running.
+- Three `MainTest` assertions passed only where `/dev/null` resolves. The break command reads `--in`
+  before it validates the rest of the arguments, so a path that does not resolve fails as unreadable
+  input with status 1 rather than as the usage error with status 2 the test is about. They take a
+  temporary empty file now.
+- Three published figures. The build instructions said 121 tests and the suite has 133. The
+  runners-up were described as packed into two log-units and they span 3.05. And 1.48 hours was
+  presented as measured, in the README, in `why-the-cipher-falls.md` and in `DemoCommand`'s javadoc;
+  it is arithmetic from the sixteen-thread rate over 85.16% of the range. The measured wall clock for
+  the whole keyspace is 2.03 hours across two machines, and belongs to no single machine either. Both
+  now say which they are.
+- The suite time in the build instructions is a measurement, 4.9 s on one desktop, rather than "about
+  ten seconds".
+
 ## [1.0.0] - 2026-08-12
 
 First release. The project was called `enigma-machine` until now and was never published under that
@@ -57,6 +94,13 @@ name.
 
 ### Fixed
 
+- `SeedSweep` reported the width of the range as keys tried, whatever had actually happened. A worker
+  whose evaluator threw died silently and the sweep returned normally claiming full coverage; in the
+  worst case every worker died on its first key and the result read 4,294,967,296 keys tried at 190
+  billion keys/sec. It counts finished work now, stops the other workers when one dies, and rethrows.
+  Leaderboard ties broke on thread arrival order, so a short crib over a wide range returned whichever
+  wrong key a worker reached first and exited zero; ties break towards the lower key now, and `break`
+  warns up front when a crib is short enough that chance alone will produce hits.
 - The honesty note printed by the demo still claimed the passphrase derivation used `String.hashCode`.
   It had used FNV-1a since before that note was last touched.
 
@@ -79,4 +123,5 @@ recording anyway, because both changed the golden vector and both were deliberat
   `String.hashCode` collides on structure rather than chance, so `"Aa"` and `"BB"` produced identical
   ciphertext.
 
+[1.1.0]: https://github.com/qnicondavid/byte-enigma/releases/tag/v1.1.0
 [1.0.0]: https://github.com/qnicondavid/byte-enigma/releases/tag/v1.0.0

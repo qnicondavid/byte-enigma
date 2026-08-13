@@ -85,22 +85,20 @@ See [benchmarks.md](benchmarks.md) and
 
 ## What these rates do not reconcile with
 
-[benchmarks.md](benchmarks.md) measures one candidate on one unloaded thread of this machine: 4.622
-us on a 160-byte message, which scales to about 5.04 us on the 234 bytes swept here, or 198,000
-keys/sec for one thread. The rates above are 114,881 per thread on two and 50,370 per thread on
-sixteen. A thread inside the sweep does between 1.7 and 3.9 times less work than a thread inside JMH,
-on the same machine, on the same message. The gap widens with the thread count: sixteen threads are
-3.51 times two threads, not eight.
+These are not the rates this code runs at. [benchmarks.md](benchmarks.md) drives the same sweep, the
+same evaluator and the same 234-byte message through JMH on this machine: two threads reach 368,345
+keys/sec where the first segment above measured 229,762, and one thread alone reaches 197,338 where
+the sixteen above averaged 50,370 each.
 
-Three things could account for that and this repository measures none of them. The CPU is hybrid, six
-performance cores and ten efficiency-class ones, so sixteen threads average a rate no single thread
-ever runs at. Clocks fall under sustained full load. And `SeedSweep` does per-candidate work the
-evaluator benchmark does not: the loop, the counters, the leaderboard comparison. There is a
-benchmark of the evaluator and none of the sweep, so nothing here separates the hardware from the
-software.
+The sweep's own software is not the explanation. `SeedSweep` adds 0.138 us to a candidate that costs
+4.929 in the evaluator, which is 2.8%, and two threads scale at 93% of one. What is left is the
+machine and the day: six performance cores and ten efficiency-class ones, so a sixteen-thread average
+is a rate no single thread runs at; clocks that fall over two hours of sustained load; and whatever
+else the laptop was doing, which nobody wrote down.
 
-Until something does, the keys/sec on this page and the us/op on that one should not be converted
-into one another. Both are measured. They are measuring different things.
+So the figures above are what that run did, and a rerun would beat them. They stay because they are
+the ones the log shows. The keys/sec here and the us/op there are still not convertible into one
+another, and it is now clear which side of the gap the difference sits on.
 
 ## Reproducing it
 

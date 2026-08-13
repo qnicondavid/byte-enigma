@@ -19,13 +19,12 @@ Fisher-Yates shuffles of 256 elements, which is 1,275 draws from a pseudorandom 
 transform afterwards is comparatively free.
 
 `CandidateBenchmark` splits it out: rekeying alone, rekeying plus a crib window, rekeying plus a full
-decrypt, and rekeying plus a decrypt plus a language score. On its one message of 160 bytes, rekeying
-alone is 3.575 us and the whole ciphertext-only candidate is 4.577, so the key schedule is 78.1% of
-the bill and everything the message length touches is the other 22%. The crib route comes out 23.8%
-cheaper there, against the 40% the sweep measured on 234 bytes. Reading that difference as the effect
-of message length is the obvious guess and is not yet a measurement: the benchmark has one message and
-no parameter for its size. What is settled is that neither attack can skip the key schedule, and the
-key schedule is the bill. [benchmarks.md](benchmarks.md) has the table.
+decrypt, and rekeying plus a decrypt plus a language score. Over four message lengths the crib route
+comes out cheaper by 8.2% at 80 bytes, 21.5% at 160, 31.1% at 234 and 163% at 1024, while its own cost
+does not move at all, because it does not read the message. So the gap grows with the message and on a
+short one the two attacks really are close. Neither can skip the key schedule, which is 73.6% of a
+ciphertext-only candidate at 234 bytes and 96.5% of a crib one, and the key schedule is the bill.
+[benchmarks.md](benchmarks.md) has the table.
 
 That has a practical consequence for anyone trying to make the search faster: optimising the transform
 is worth less than it looks. The optimisation that mattered most was in the generator.
@@ -35,15 +34,17 @@ same algorithm over a plain field, bit for bit identical and pinned by `Lcg48Equ
 of the difference; decrypting only the crib window rather than the whole message is the rest. Together
 they took the crib sweep from 105,452 keys/sec to 383,173 on the same two cores.
 
-Where the rest of the schedule goes is not settled. Fisher-Yates draws `nextInt(i + 1)` for `i` from
-255 down to 1, so almost every bound is not a power of two, and `java.util.Random.nextInt(int)`
-handles those with a rejection loop built on an integer division. This page used to say that
-division, 1,275 times per key, was where a sweep spends most of its life. Nothing in the repository
-measures it: `RandomSourceBenchmark` draws at bound 256, a power of two, which takes the branch that
-skips the loop. What is measured is the generator at that cheap bound, 0.997 us against a 3.608 us
-key schedule, and the other 2.6 us are the shuffling and whatever the harder bounds cost, in
-proportions nobody has separated. The claim stands withdrawn until a benchmark draws on the bounds
-the shuffle uses.
+Where the rest of the schedule goes is measured now. Fisher-Yates draws `nextInt(i + 1)` for `i` from
+255 down to 1, so almost every bound is not a power of two, and `nextInt` handles those with a
+rejection loop built on an integer division. Drawing 1,275 times at the shuffle's own bounds costs
+2.685 us against 1.001 at a bound of 256, so the loop is 1.684 us per candidate: 34.2% of a
+ciphertext-only one at 234 bytes, and the largest single item in it. Not most of a sweep's life, as
+this page used to say, but more of it than anything else.
+
+None of that was visible until the atomic went. `java.util.Random` costs the same at either bound,
+9.152 us against 9.182, because the compare-and-set swamps the difference. Which also means the
+speedup from replacing it is 3.42x on the bounds the cipher actually uses, rather than the 9.14x the
+two power-of-two figures suggest.
 
 [keyspace-sweep.md](keyspace-sweep.md) has the whole range actually swept: 4,294,967,296 keys in
 2.03 hours on one machine, two threads for the first 14.84% of the range and sixteen for the rest,

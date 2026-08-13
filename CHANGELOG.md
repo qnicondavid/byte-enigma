@@ -5,37 +5,49 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 ## [Unreleased]
 
+The benchmarks were run. They had never been run: the suite compiled and sat in the reactor for
+months, because the environment the work was done in could not reach Maven Central, while these docs
+described what it showed. One of those descriptions was wrong, two were right and had nothing behind
+them, and one benchmark was measuring a workload the cipher never runs.
+
 ### Added
 
-- `docs/benchmarks.md`. The JMH suite has been run, for the first time. The key schedule is 78.1% of
-  a ciphertext-only candidate and 95.8% of a crib one, which is the claim the rest of the repository
-  rests on and which had never been measured. Two independent benchmarks agree on it to within 0.9%,
-  and the cost model these docs describe, five Fisher-Yates shuffles of about 0.69 us each, falls out
-  of the rotor-count sweep.
-- Three benchmarks aimed at the three gaps that page declares open. `RandomSourceBenchmark` gains a
-  pair drawing at the bounds Fisher-Yates asks for rather than at one convenient power of two, so the
-  rejection loop's integer division can be measured instead of asserted. `CandidateBenchmark` gains a
-  `messageSize` parameter over 80, 160, 234 and 1024, where 160 reproduces the first run's message
-  byte for byte and is kept as the control. `SweepBenchmark` drives the real `SeedSweep` rather than
-  the evaluator alone, which is the only way to tell its per-candidate overhead apart from hybrid
-  cores and sustained-load clocks. None of the three has been run yet.
+- `docs/benchmarks.md`, the run and what it means. The key schedule is 73.6% of a ciphertext-only
+  candidate at 234 bytes and 96.5% of a crib one, which is the claim the rest of this repository
+  rests on and which had never been measured. A candidate splits four ways: the generator at a
+  power-of-two bound, 20.3%; the rejection loop on the bounds a shuffle really uses, 34.2%; the rest
+  of the shuffling, 19.2%; the message, 26.4%.
+- `RandomSourceBenchmark` draws at the bounds Fisher-Yates asks for as well as at 256. It only ever
+  drew at 256 before, while these docs cited it for the cost of the loop that bound skips.
+- `CandidateBenchmark` takes a `messageSize`, over 80, 160, 234 and 1024. The 160-byte case rebuilds
+  the previous message byte for byte and is kept as a control; it reproduces the earlier run inside
+  the error bars on every method.
+- `SweepBenchmark` drives `SeedSweep` itself rather than the evaluator it calls, which is the only
+  thing that can tell the sweep's own overhead apart from the machine underneath it.
+- `Messages` holds the plaintext those two share, so they and `docs/keyspace-sweep.md` describe the
+  same bytes.
 
 ### Changed
 
-- Two claims in `docs/why-the-cipher-falls.md` are withdrawn rather than reworded, because the
-  benchmarks meant to support them do not. The integer division in `java.util.Random.nextInt(int)`'s
-  rejection loop was said to be where a sweep spends most of its life; `RandomSourceBenchmark` draws
-  at bound 256, a power of two, which skips that loop, so nothing here has ever measured it. And the
-  gap between the two attacks was said to grow with the message; `CandidateBenchmark` has one message
-  and no parameter for its size.
+- The two attacks do separate as the message grows, which these docs asserted for months on one
+  hardcoded message. Measured over four: the crib route is cheaper by 8.2% at 80 bytes, 21.5% at 160,
+  31.1% at 234 and 163% at 1024, and its own cost does not move at all, because it does not read the
+  message.
+- The rejection loop is not where a sweep spends most of its life, as these docs said. It is 34.2% of
+  a candidate: more than anything else, and not most. The speedup from replacing `java.util.Random`
+  is 3.42x at the bounds the cipher uses, not the 9.14x measured at a bound of 256 it never draws at.
+  The compare-and-set swamps the difference, so `java.util.Random` costs the same either way and the
+  loop was invisible underneath it until the atomic went.
+- The rates in `docs/keyspace-sweep.md` are slower than the same code runs at today. Two threads
+  measured 229,762 keys/sec there and reach 368,345 in JMH; the sixteen-thread segment reached 25.5%
+  of what sixteen unloaded threads would give. `SeedSweep` adds 0.138 us to a 4.929 us candidate,
+  2.8%, so almost none of that is software. The page says which side the difference is on now instead
+  of leaving it open.
 - The sweep was described as having run on two different machines. It ran on one, at two thread
   counts: two for the first 14.84% of the range, sixteen for the rest. Corrected in the README, in
-  both docs pages and in the 1.1.0 entry above, which repeated it while correcting something else.
-- `keyspace-sweep.md` gains a section on what its keys/sec do not reconcile with. A thread inside the
-  sweep does between 1.7 and 3.9 times less work than a thread inside JMH, on the same machine and
-  the same message, and the gap widens with the thread count. Hybrid cores, sustained-load clocks and
-  `SeedSweep`'s own per-candidate work would all account for some of it; nothing here separates them,
-  because the benchmarks measure the evaluator and there is no benchmark of the sweep.
+  both docs pages and in the 1.1.0 entry below, which repeated it while correcting something else.
+- `admissibilityFilter` was charging itself for a `String.getBytes` inside the measured method. The
+  0.010 us it reported was wrong; it is 0.004.
 
 ## [1.1.0] - 2026-08-13
 

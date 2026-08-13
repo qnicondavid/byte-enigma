@@ -102,6 +102,9 @@ public final class Main {
                   --for <seconds>      Stop after roughly this long and checkpoint. Exit code 3
                                        means there is more range left. Run the same command again
                                        to carry on.
+                  --histogram <file>   Count every score into bins and write the distribution here.
+                                       Needs --language, and needs the run to start from the
+                                       beginning, because it counts only the keys this run tries.
 
                 EXAMPLES
                   byte-enigma demo
@@ -109,6 +112,7 @@ public final class Main {
                   byte-enigma break --crib ATTACK --at 0 --in message.b64
                   byte-enigma break --language --in message.b64 --top 5
                   byte-enigma break --language --in message.b64 --checkpoint sweep.state --for 3600
+                  byte-enigma break --language --in message.b64 --histogram scores.tsv
 
                 This cipher is a teaching artifact with a 32-bit key and no authentication.
                 It is not secure and is not trying to be. See the README.""");

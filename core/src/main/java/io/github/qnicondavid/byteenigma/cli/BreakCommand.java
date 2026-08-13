@@ -4,6 +4,7 @@ import io.github.qnicondavid.byteenigma.breaker.CribMatcher;
 import io.github.qnicondavid.byteenigma.breaker.QuadgramSearch;
 import io.github.qnicondavid.byteenigma.cipher.ByteEnigma;
 import io.github.qnicondavid.byteenigma.search.Candidate;
+import io.github.qnicondavid.byteenigma.search.ScoreHistogram;
 import io.github.qnicondavid.byteenigma.search.SeedEvaluator;
 import io.github.qnicondavid.byteenigma.search.SeedSweep;
 import io.github.qnicondavid.byteenigma.search.SweepCheckpoint;
@@ -26,13 +27,21 @@ final class BreakCommand {
 
     private static final String[] BREAK_OPTIONS = {
         "crib", "at", "language", "rotors", "in", "binary", "from", "to",
-        "threads", "top", "progress", "checkpoint", "segment", "for"
+        "threads", "top", "progress", "checkpoint", "segment", "for", "histogram"
     };
 
     private static final String[] OFFSET_OPTIONS = {"crib", "in", "binary"};
 
     /** Default keys per segment: about four minutes of work on two cores. */
     private static final long DEFAULT_SEGMENT = 1L << 26;
+
+    // Where the scores of a whole sweep are expected to land, for --histogram. A sweep cannot make
+    // two passes over four billion keys to find its own range, so this is a guess: the best key of
+    // the published sweep scored -1620 and the tenth scored -1830, and the bulk sits below that.
+    // The file reports how many fell outside, which is how you find out the guess was wrong.
+    private static final double HISTOGRAM_LO = -2200.0;
+    private static final double HISTOGRAM_HI = -1500.0;
+    private static final double HISTOGRAM_BIN = 0.1;
 
     static int run(Arguments args, InputStream stdin, PrintStream stdout) throws IOException {
         args.rejectUnknown(BREAK_OPTIONS);
@@ -99,6 +108,19 @@ final class BreakCommand {
             resumed.requireMatches(mode, digest, from, to);
         }
 
+        Path histogramPath = args.has("histogram") ? Path.of(args.require("histogram")) : null;
+        if (histogramPath != null) {
+            if (crib) {
+                throw new Arguments.UsageException("--histogram needs --language. A crib evaluator "
+                        + "rejects almost every key without scoring it, so the file would hold one entry.");
+            }
+            if (resumed != null) {
+                throw new Arguments.UsageException("--histogram counts only the keys this run tries, "
+                        + "and this one resumes at " + resumed.cursor() + ". Start from the beginning "
+                        + "or drop the flag.");
+            }
+        }
+
         long cursor = resumed == null ? from : resumed.cursor();
         long keysTried = resumed == null ? 0L : resumed.keysTried();
         long elapsedNanos = resumed == null ? 0L : resumed.elapsedNanos();
@@ -124,6 +146,11 @@ final class BreakCommand {
         long progressSeconds = args.longValue("progress", segment > (1L << 24) ? 60L : 0L);
         if (progressSeconds > 0L && checkpointPath == null) {
             sweep = sweep.reportingTo(new SweepProgressPrinter(stdout), progressSeconds * 1000L);
+        }
+        ScoreHistogram histogram = null;
+        if (histogramPath != null) {
+            histogram = new ScoreHistogram(HISTOGRAM_LO, HISTOGRAM_HI, HISTOGRAM_BIN);
+            sweep = sweep.recordingScoresInto(histogram);
         }
 
         long budgetNanos = budgetSeconds * 1_000_000_000L;
@@ -165,6 +192,22 @@ final class BreakCommand {
             stdout.printf("stopped on budget at %,d of %,d keys (%.2f%%). Run the same command again%n",
                     cursor - from, total, 100.0 * (cursor - from) / total);
             stdout.println("to carry on from here.");
+            stdout.println();
+        }
+        if (histogram != null) {
+            Files.writeString(histogramPath, histogram.render(), StandardCharsets.UTF_8);
+            stdout.printf("histogram:  %,d scores written to %s%n", histogram.counted(), histogramPath);
+            if (histogram.counted() > 0L) {
+                stdout.printf("            lowest %.2f, highest %.2f%n",
+                        histogram.lowest(), histogram.highest());
+            }
+            if (histogram.under() > 0L || histogram.over() > 0L) {
+                stdout.printf("            %,d fell below %.0f and %,d above %.0f, so the bins were "
+                        + "chosen badly%n", histogram.under(), HISTOGRAM_LO, histogram.over(), HISTOGRAM_HI);
+            }
+            if (stoppedEarly) {
+                stdout.println("            this run stopped early, so the file is not the whole range");
+            }
             stdout.println();
         }
         report(stdout, keysTried, elapsedNanos, best, topN, cursor >= to);

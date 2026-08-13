@@ -36,6 +36,11 @@ them, and one benchmark was measuring a workload the cipher never runs.
   ranking the top ten. Workers fill their own copy and the copies merge once they stop, the same way
   the leaderboard works. `SweepBenchmark` gained a parameter that measures what it costs, because
   finding out after an hour of machine time is the wrong order.
+- `break --histogram <file>` writes the distribution the sweep saw. It needs `--language`, because
+  a crib evaluator rejects almost every key without scoring it, and it refuses to run on a resumed
+  checkpoint, because it counts only the keys of the run that is happening. The bin range is a
+  guess made up front, since a sweep cannot make two passes over four billion keys, and the file
+  reports how many scores fell outside it.
 - `docs/using-the-search.md`, which is where the library half of the README went.
 
 ### Changed

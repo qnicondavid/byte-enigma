@@ -12,11 +12,20 @@ permissions:
 
 jobs:
   test:
-    name: JDK ${{ matrix.java }}
-    runs-on: ubuntu-latest
+    name: JDK ${{ matrix.java }} on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+
+    # Windows is in the matrix because it was not, and three tests in MainTest passed only
+    # because /dev/null resolves on Linux. Git Bash is present on the Windows runner, so the
+    # shell steps below stay one script rather than two.
+    defaults:
+      run:
+        shell: bash
+
     strategy:
       fail-fast: false
       matrix:
+        os: [ubuntu-latest, windows-latest]
         java: ['17', '21']
 
     steps:
@@ -50,6 +59,6 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: surefire-reports-jdk${{ matrix.java }}
+          name: surefire-reports-${{ matrix.os }}-jdk${{ matrix.java }}
           path: '**/target/surefire-reports/**'
           retention-days: 7

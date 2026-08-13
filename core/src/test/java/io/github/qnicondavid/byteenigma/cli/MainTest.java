@@ -4,7 +4,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.PrintStream;
+import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -14,6 +16,24 @@ import org.junit.jupiter.api.Test;
 class MainTest {
 
     private record Run(int status, String out, String err) {
+    }
+
+    /**
+     * An input file that exists and is empty. The break command reads {@code --in} before it
+     * validates the rest of the arguments, so a path that does not resolve fails as unreadable
+     * input rather than as the usage error under test. A hardcoded {@code /dev/null} passed on
+     * Linux and turned three of these assertions red on Windows.
+     */
+    private static final String EMPTY_INPUT = emptyInput();
+
+    private static String emptyInput() {
+        try {
+            Path file = Files.createTempFile("byte-enigma-empty", ".b64");
+            file.toFile().deleteOnExit();
+            return file.toString();
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
     private static Run invoke(String... args) {
@@ -122,9 +142,9 @@ class MainTest {
     void argumentsTheLibraryRejectsComeBackAsUsageErrorsRatherThanStackTraces() {
         String[][] bad = {
             {"raw", "--key", "1", "--rotors", "0"},
-            {"break", "--language", "--threads", "0", "--in", "/dev/null"},
-            {"break", "--language", "--from", "5", "--to", "1", "--in", "/dev/null"},
-            {"break", "--language", "--from", "0", "--to", "99999999999", "--in", "/dev/null"},
+            {"break", "--language", "--threads", "0", "--in", EMPTY_INPUT},
+            {"break", "--language", "--from", "5", "--to", "1", "--in", EMPTY_INPUT},
+            {"break", "--language", "--from", "0", "--to", "99999999999", "--in", EMPTY_INPUT},
         };
         for (String[] arguments : bad) {
             Run run = invoke(arguments);
@@ -135,14 +155,14 @@ class MainTest {
 
     @Test
     void breakingNeedsExactlyOneMode() {
-        Run neither = invoke("break", "--in", "/dev/null");
+        Run neither = invoke("break", "--in", EMPTY_INPUT);
         assertEquals(2, neither.status());
         assertTrue(neither.err().contains("exactly one"), neither.err());
     }
 
     @Test
     void aCribWithoutAnOffsetIsRefusedWithAdvice() {
-        Run run = invoke("break", "--crib", "ATTACK", "--in", "/dev/null");
+        Run run = invoke("break", "--crib", "ATTACK", "--in", EMPTY_INPUT);
         assertEquals(2, run.status());
         assertTrue(run.err().contains("--at"), run.err());
     }

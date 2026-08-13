@@ -63,6 +63,35 @@ full eighteen bytes. A wrong key matches an eighteen-byte crib with probability 
 arithmetic. The checkpoint it left is 554 bytes with a single `best=` line in it, which is the whole
 of the evidence.
 
+## What the other four billion scored
+
+The leaderboard says the margin is 206.39 log-units. It cannot say what 206 is large compared to.
+Counting every score into bins of a tenth of a unit answers that.
+
+![Two log-scale histograms of every score in the sweep. Almost the whole keyspace lands in one bin at the floor, a thin tail runs 25 log-units above it, then 206 log-units pass with nothing in them, then the key stands alone](score-distribution.svg)
+
+Three things happen, and the first is almost all of the space.
+
+**Nothing is recognised.** 4,249,795,476 keys, 98.95% of the keyspace, land on one score. Not near
+each other, the same: they share a single bin, and the twenty-four bins above it hold nothing at all.
+A candidate whose decrypted bytes contain no run of four letters is charged the floor on every
+window, so its total is a constant, and most decryptions under a wrong key contain no such run.
+
+**Something is recognised by accident.** The other 1.05%, about 45 million keys, spread over 25
+log-units and thin out fast. 1,246,767 score above -1845, then 23,507 above -1840, then 478 above
+-1835, then eleven above -1830, then two above -1827. The last of them, at -1826.76, is the best
+accident in the whole space.
+
+**English is recognised.** One key, with 2,063 empty bins between it and the nearest thing that is
+not it.
+
+That last number is the one worth carrying away. The entire noise distribution, floor to best
+accident, is 25.00 log-units wide. The margin is 8.3 times that. The key is not at the top of the
+distribution and it is not in its tail. It is more than eight distribution-widths past the end of it.
+
+The file the run wrote is committed as `score-histogram.tsv`, 199 populated bins out of 7,000, and
+the figure above is drawn from it by `tools/`.
+
 ## Rates
 
 Both sweeps below are single uninterrupted runs of the whole range on sixteen threads of one
@@ -139,7 +168,8 @@ byte-enigma break --crib "THIRTY TWO BIT KEY" --at 36 --in message.b64 --top 10 
 ```
 
 Both default to the entire keyspace and are told nothing else. Add `--threads` to pin the count; the
-runs here used 16.
+runs here used 16. Add `--histogram <file>` to the language sweep and it writes the distribution as
+well as the leaderboard, which costs about 2.4% of the run.
 
 `--checkpoint` is what makes a run this long practical. The sweep walks the range in segments and
 records where it got to after each one, so it can be stopped at any point and picked up by running

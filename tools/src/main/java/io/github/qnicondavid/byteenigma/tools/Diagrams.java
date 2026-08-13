@@ -25,6 +25,8 @@ public final class Diagrams {
         Map<String, String> figures = new LinkedHashMap<>();
         figures.put("docs/score-gap.svg", ScoreGapDiagram.render(root.resolve("docs/keyspace-sweep.state")));
         figures.put("docs/key-reuse.svg", KeyReuseDiagram.render());
+        figures.put("docs/score-distribution.svg", ScoreDistributionDiagram.render(
+                root.resolve("docs/score-histogram.tsv"), root.resolve("docs/keyspace-sweep.state")));
         return figures;
     }
 

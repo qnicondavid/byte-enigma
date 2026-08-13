@@ -41,6 +41,13 @@ them, and one benchmark was measuring a workload the cipher never runs.
   checkpoint, because it counts only the keys of the run that is happening. The bin range is a
   guess made up front, since a sweep cannot make two passes over four billion keys, and the file
   reports how many scores fell outside it.
+- `docs/score-histogram.tsv` and the figure drawn from it. Counting all 4,294,967,296 scores turned
+  up a shape nobody predicted: 4,249,795,476 keys, 98.95% of the space, share one bin 0.1 wide, and
+  the twenty-four bins above it are empty. A decryption with no run of four letters is charged the
+  floor on every window and lands on the same constant as all the others, and recognising a single
+  quadgram is worth about 2.5 log-units, so there is no smaller step available. The noise that is
+  left spans 25.00 log-units, which makes the margin 8.3 times the width of the entire distribution
+  it stands outside of.
 - `docs/using-the-search.md`, which is where the library half of the README went.
 
 ### Changed

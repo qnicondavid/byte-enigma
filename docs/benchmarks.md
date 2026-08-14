@@ -18,11 +18,17 @@ nothing. Two of them were right anyway and now have numbers. One was wrong.
 | JMH | 1.37, blackhole mode `compiler`, auto-detected |
 | Threads | 1, except inside `SweepBenchmark`, which makes its own |
 | Forks | 2, five measured iterations each, so every count is 10 |
+| Date | 13 August 2026 |
 
 ```
 mvn -B -ntp -pl benchmarks -am package
 java -jar benchmarks/target/benchmarks.jar
 ```
+
+Every figure here comes from one run of the whole suite, committed as `docs/benchmarks.json`. Nothing
+is spliced in from another run. That matters more than it sounds: the same benchmark moves a few
+percent between runs on this machine, and two of the things this page used to claim were smaller than
+that.
 
 `CandidateBenchmark` at 160 bytes is a control: it rebuilds the message an earlier run used, byte for
 byte, and has to return the same numbers. It does, inside the error bars, on all six of its methods.
@@ -34,16 +40,22 @@ Take the rest of the page as far as that makes you willing to.
 
 | | 80 B | 160 B | 234 B | 1024 B |
 |---|---|---|---|---|
-| `admissibilityFilter` | 0.004 | 0.004 | 0.004 | 0.004 |
-| `rekeyOnly` | 3.606 | 3.584 | 3.629 | 3.649 |
-| `cribEvaluator` | 3.721 | 3.724 | 3.760 | 3.730 |
-| `rekeyAndCribWindow` | 3.749 | 3.803 | 3.779 | 3.716 |
-| `rekeyAndFullTransform` | 4.014 | 4.404 | 4.743 | 8.824 |
-| `rekeyTransformAndScore` | 4.107 | 4.589 | 5.039 | 9.522 |
-| `languageEvaluator` | 4.025 | 4.526 | 4.929 | 9.814 |
+| `admissibilityFilter` | 0.0044 | 0.0044 | 0.0045 | 0.0044 |
+| `rekeyOnly` | 3.648 | 3.625 | 3.632 | 3.613 |
+| `cribEvaluator` | 3.799 | 3.830 | 3.743 | 3.825 |
+| `rekeyAndCribWindow` | 3.833 | 3.872 | 3.875 | 3.867 |
+| `rekeyAndFullTransform` | 4.139 | 4.449 | 4.930 | 8.865 |
+| `rekeyTransformAndScore` | 4.094 | 4.543 | 4.858 | 9.466 |
+| `languageEvaluator` | 4.200 | 4.671 | 5.073 | 10.169 |
 
 `rekeyOnly` and `cribEvaluator` are flat across a thirteenfold change in message length, which is the
 whole point: the crib attack does not read the message. `languageEvaluator` more than doubles.
+
+Two cells in that table are impossible. `rekeyTransformAndScore` does everything
+`rekeyAndFullTransform` does and then scores the result, so it cannot be cheaper, and at 80 and 234
+bytes it comes out 1.1% and 1.5% below. The error bars cover it, which is the point: differences of
+that size on this page are not differences. There is a second one further down, at 65,536 bytes in
+the transform, and that one the error bars do not cover.
 
 ## Where the time in a candidate goes
 
@@ -52,13 +64,15 @@ splitting it with `RandomSourceBenchmark` and `KeyScheduleBenchmark`:
 
 | | us | share |
 |---|---|---|
-| generator, what 1,275 draws cost at a power-of-two bound | 1.001 | 20.3% |
-| generator, the rejection loop on the bounds a shuffle really uses | 1.684 | **34.2%** |
-| the rest of the shuffling | 0.944 | 19.2% |
-| transform and score | 1.300 | 26.4% |
-| | **4.929** | 100% |
+| generator, what 1,275 draws cost at a power-of-two bound | 1.000 | 19.7% |
+| generator, the rejection loop on the bounds a shuffle really uses | 1.665 | **32.8%** |
+| the rest of the shuffling | 0.967 | 19.1% |
+| transform and score | 1.441 | 28.4% |
+| | **5.073** | 100% |
 
-The key schedule is 73.6% of that candidate, and 96.5% of a crib one. The single largest item in it
+![Two bars on one scale for a 234-byte message. The ciphertext-only candidate and the crib candidate begin with the same key schedule, split into the generator, its rejection loop and the rest of the shuffling. Only the short end differs, and on the crib bar it is a sliver](candidate-split.svg)
+
+The key schedule is 71.6% of that candidate, and 97.0% of a crib one. The single largest item in it
 is the rejection loop, at about a third of everything.
 
 ## The two attacks separate as the message grows
@@ -68,16 +82,18 @@ message, and is now measured over four:
 
 | message | crib | ciphertext-only | crib is cheaper by |
 |---|---|---|---|
-| 80 B | 3.721 | 4.025 | 8.2% |
-| 160 B | 3.724 | 4.526 | 21.5% |
-| 234 B | 3.760 | 4.929 | 31.1% |
-| 1024 B | 3.730 | 9.814 | 163% |
+| 80 B | 3.799 | 4.200 | 10.6% |
+| 160 B | 3.830 | 4.671 | 22.0% |
+| 234 B | 3.743 | 5.073 | 35.5% |
+| 1024 B | 3.825 | 10.169 | 166% |
+
+![Three lines against message length. The key schedule is flat at about 3.6 microseconds and the crib attack is flat just above it, because it decrypts a sixteen-byte window whatever the message length is. The ciphertext-only attack climbs from 4.2 to 10.2, and the shaded gap between the two widens from 10.6 percent to 166 percent](attack-scaling.svg)
 
 So it was true. On a short message the two attacks really are close to each other, and the gap grows
 with the message and nothing else, because the message length is the only work a crib skips. What was
 missing was any reason to believe it.
 
-Two complete sweeps of the whole keyspace put the crib route 49% ahead, where this puts it 31%. The
+Two complete sweeps of the whole keyspace put the crib route 49% ahead, where this puts it 36%. The
 difference is the sweep rather than the evaluator: `QuadgramSearch` returns a `Candidate` for every
 key and `CribMatcher` returns `null`, so the ciphertext-only route also pays an allocation and a
 leaderboard comparison four billion times. [keyspace-sweep.md](keyspace-sweep.md) has that
@@ -89,8 +105,8 @@ arithmetic.
 
 | | at bound 256 | at the shuffle's own bounds |
 |---|---|---|
-| `java.util.Random` | 9.152 ±0.050 | 9.182 ±0.082 |
-| `Lcg48`, over a plain field | 1.001 ±0.006 | 2.685 ±0.035 |
+| `java.util.Random` | 9.161 ±0.057 | 9.201 ±0.067 |
+| `Lcg48`, over a plain field | 1.000 ±0.004 | 2.665 ±0.023 |
 
 Read the rows and then the columns, because they say different things.
 
@@ -98,12 +114,12 @@ Along the top row, the rejection loop is invisible. `java.util.Random` costs the
 bounds are powers of two or not: the compare-and-set on its `AtomicLong` swamps everything else, and
 that is why nobody noticed what the bounds cost until the atomic was gone.
 
-Along the bottom row it is 2.68 times the work. Fisher-Yates asks for `nextInt(i + 1)` with `i` from
+Along the bottom row it is 2.67 times the work. Fisher-Yates asks for `nextInt(i + 1)` with `i` from
 255 down to 1, almost never a power of two, so `nextInt` goes through the rejection loop and its
-integer division 1,275 times per candidate. That is the 1.684 us in the table above, and it is the
+integer division 1,275 times per candidate. That is the 1.665 us in the table above, and it is the
 biggest single line in it.
 
-**The speedup from replacing the generator is 3.42x, not 9.14x.** The larger number is the ratio at a
+**The speedup from replacing the generator is 3.45x, not 9.16x.** The larger number is the ratio at a
 bound of 256, which is a workload the key schedule never runs, and it was the only ratio this project
 had measured. Both columns are here so the difference stays visible.
 
@@ -113,15 +129,15 @@ had measured. Both columns are here so the difference stays visible.
 
 | rotors | `construct` | `rekeyInPlace` |
 |---|---|---|
-| 1 | 2.260 ±0.104 | 2.067 ±0.031 |
-| 3 | 3.830 ±0.097 | 3.642 ±0.095 |
-| 8 | 7.444 ±0.165 | 6.847 ±0.190 |
+| 1 | 2.320 ±0.022 | 2.058 ±0.030 |
+| 3 | 3.825 ±0.077 | 3.610 ±0.069 |
+| 8 | 7.503 ±0.325 | 6.872 ±0.172 |
 
-A line through `rekeyInPlace` has a slope of 0.683 us per rotor and an intercept of 1.384 us for the
-two involutions, 0.692 us each. Five Fisher-Yates shuffles of 256 elements at about 0.69 us apiece is
+A line through `rekeyInPlace` has a slope of 0.688 us per rotor and an intercept of 1.370 us for the
+two involutions, 0.685 us each. Five Fisher-Yates shuffles of 256 elements at about 0.69 us apiece is
 the cost model these docs describe, recovered from the other end.
 
-Rekeying in place beats constructing by 5.2% at three rotors, 9.3% at one and 8.7% at eight. That
+Rekeying in place beats constructing by 5.6% at three rotors, 11.3% at one and 8.4% at eight. That
 change was made to cut allocation rather than time; the time it buys is real and small.
 
 ## The transform
@@ -130,22 +146,24 @@ change was made to cut allocation rather than time; the time it buys is real and
 
 | bytes | `allocating` | `reusingABuffer` | `withANonce` |
 |---|---|---|---|
-| 64 | 3136.298 ±235.185 | 3190.820 ±41.802 | 3038.862 ±62.763 |
-| 1024 | 200.867 ±4.137 | 201.879 ±3.870 | 192.707 ±3.392 |
-| 65536 | 2.925 ±0.090 | 2.978 ±0.044 | 3.110 ±0.034 |
+| 64 | 3133.861 ±105.113 | 3186.175 ±46.640 | 2937.082 ±113.598 |
+| 1024 | 199.081 ±5.411 | 199.577 ±4.987 | 193.512 ±4.144 |
+| 65536 | 2.897 ±0.083 | 2.928 ±0.064 | 3.036 ±0.086 |
 
 The zero-allocation overload is ahead everywhere and by less than its error bar everywhere. It is not
 distinguishable from the allocating one, which is a stronger version of what these docs say about
-optimising the transform: against a key schedule that is three quarters of the bill, this is not where
+optimising the transform: against a key schedule that is 72% of the bill, this is not where
 a sweep is won.
 
-The transform costs about 5 ns a byte, and two harnesses agree on it: 1024 bytes take 4.98 us here
-and the same 1024 bytes take 5.18 us as the gap between `rekeyAndFullTransform` and `rekeyOnly`.
+The transform costs about 5 ns a byte, and two harnesses agree on it: 1024 bytes take 5.02 us here
+and the same 1024 bytes take 5.25 us as the gap between `rekeyAndFullTransform` and `rekeyOnly`.
 
 One cell is a standing warning. At 65,536 bytes the nonce scores *higher* than the plain transform,
-which is impossible, since it moves the starting offsets and adds work, and it did so in the previous run
-too, so it is not a one-off. Something about that particular measurement is wrong in a way the error
-bars do not show. Do not read any 2% difference on this page as a result.
+which is impossible, since it moves the starting offsets and adds work. It has now done that in every
+run of this benchmark, four of them, by about 5% each time. Any one run leaves a sliver of overlap
+between the two error bars, so no single run separates them; four runs with the same sign are harder
+to wave away. Something about that measurement is wrong and this page does not know what. Do not read
+any 2% difference on it as a result.
 
 ## The sweep itself
 
@@ -153,28 +171,61 @@ bars do not show. Do not read any 2% difference on this page as a result.
 
 | threads | ms/op | keys/sec |
 |---|---|---|
-| 1 | 332.099 ±3.498 | 197,338 |
-| 2 | 177.920 ±3.589 | 368,345 |
+| 1 | 330.873 ±9.299 | 198,070 |
+| 2 | 176.987 ±3.764 | 370,287 |
 
-One thread through the sweep costs 5.067 us a key against 4.929 for the evaluator alone. **`SeedSweep`
-adds 0.138 us per candidate, 2.8%**, and that covers the loop, the counters and the leaderboard.
-Two threads scale at 93% of one.
+Two threads scale at 93.5% of one.
+
+One thread through the sweep costs 5.049 us a key, and the evaluator alone costs 5.073 in
+`CandidateBenchmark`. The subtraction says the sweep is free, which it is not: it runs a loop, keeps
+counters and compares every candidate against a leaderboard. An earlier run made the same subtraction
+and got 0.138 us, 2.8%, and this page carried that figure in bold. Neither number is the overhead.
+Both are smaller than the amount `languageEvaluator` moves between runs, which was 2.9% across those
+two. What the suite supports is a bound: the sweep's own cost is under about 3% of a candidate. Going
+below that needs a benchmark that measures the difference directly rather than subtracting two
+numbers whose gap is inside their own drift.
 
 That settles the question this benchmark was written for. The rates in
 [keyspace-sweep.md](keyspace-sweep.md) are far below what the same code does here. Its two-thread
-segment measured 229,762 keys/sec where two threads now do 368,345, 1.60 times more, and its
-sixteen-thread segment reached 25.5% of what sixteen unloaded single threads would give. Almost none
+segment measured 229,762 keys/sec where two threads now do 370,287, 1.61 times more, and its
+sixteen-thread segment reached 25.4% of what sixteen unloaded single threads would give. Almost none
 of that is the sweep's software. What is left is the machine: six performance cores and ten
 efficiency-class ones, so a sixteen-thread average is a rate no single thread runs at, clocks that
 fall under sustained load, and whatever else the laptop was doing across the two hours. The published
 figures are what that run did. They are not what this code can do.
 
+## What the histogram costs
+
+`--histogram` counts every score into a fixed bin. That is one array increment per candidate, against
+a candidate that costs microseconds, so it should be invisible. Five runs of `SweepBenchmark`
+disagree about whether it is:
+
+| run | 1 thread | 2 threads |
+|---|---|---|
+| on its own | +1.91% | -0.27% |
+| in a full suite | +3.28% | +0.59% |
+| in the full suite this page reports | +6.96% | **+12.69%** |
+| on its own | +2.72% | +1.17% |
+| on its own | +3.64% | +0.94% |
+
+The third run is not noisy inside itself. Its ten histogram-on iterations at two threads sit between
+192.41 and 204.77 ms while its ten histogram-off iterations sit between 174.15 and 182.08, and that
+off arm agrees with every other run to within 4%. Whatever happened held for a whole JVM and then
+stopped. One fact that may or may not be the cause: those two cells are the last two measurements of
+a 33-minute suite, so they are the hottest the machine gets, and the four runs that disagree with
+them were all taken in the first minutes of a run.
+
+The other four put the cost near a percent at two threads and near three at one, and the measurement
+that is not a microbenchmark agrees with them: the whole keyspace with the histogram took 63.7
+minutes against 62.2 without, 2.4%, on sixteen threads. Use that. The outlier stays in the table
+because dropping it would make the benchmark look steadier than it is.
+
 ## What this still does not measure
 
-- Why the published sweep ran 1.60 times slower on two threads than two threads do now. The software
+- Why the published sweep ran 1.61 times slower on two threads than two threads do now. The software
   is accounted for; the conditions of that run are not, and nobody wrote them down at the time.
 - Anything above two threads. `SweepBenchmark` stops there deliberately, because a thread count past
   that is a fact about one laptop rather than about this code.
-- `admissibilityFilter` reads 0.004 us here against 0.010 in the previous run. That is not the filter
-  getting faster. The earlier benchmark called `String.getBytes` inside the measured method and was
-  charging the filter for an allocation; it is hoisted into a field now. 0.010 was wrong.
+- `admissibilityFilter` reads about 0.0045 us here against 0.010 in an earlier run. That is not the
+  filter getting faster. The earlier benchmark called `String.getBytes` inside the measured method
+  and was charging the filter for an allocation; it is hoisted into a field now. 0.010 was wrong.

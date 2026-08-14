@@ -54,9 +54,10 @@ died on its first key.
 
 ## What it costs
 
-A key through the sweep costs 0.138 microseconds more than the same key through the evaluator alone,
-about 2.8%, and that pays for the loop, the counters and the leaderboard comparison. Two threads
-scale at 93% of one. [benchmarks.md](benchmarks.md) has the measurements and the caveats.
+The loop, the counters and the leaderboard comparison cost under about 3% of a candidate. That is a
+bound rather than a figure: the benchmark that would give a figure subtracts two other benchmarks,
+and their difference is smaller than the amount either of them moves between runs. Two threads scale
+at 93.5% of one. [benchmarks.md](benchmarks.md) has the measurements and the caveats.
 
 ## The cipher, if you want it anyway
 

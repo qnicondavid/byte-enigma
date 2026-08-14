@@ -20,10 +20,10 @@ transform afterwards is comparatively free.
 
 `CandidateBenchmark` splits it out: rekeying alone, rekeying plus a crib window, rekeying plus a full
 decrypt, and rekeying plus a decrypt plus a language score. Over four message lengths the crib route
-comes out cheaper by 8.2% at 80 bytes, 21.5% at 160, 31.1% at 234 and 163% at 1024, while its own cost
+comes out cheaper by 10.6% at 80 bytes, 22.0% at 160, 35.5% at 234 and 166% at 1024, while its own cost
 does not move at all, because it does not read the message. So the gap grows with the message and on a
-short one the two attacks really are close. Neither can skip the key schedule, which is 73.6% of a
-ciphertext-only candidate at 234 bytes and 96.5% of a crib one, and the key schedule is the bill.
+short one the two attacks really are close. Neither can skip the key schedule, which is 71.6% of a
+ciphertext-only candidate at 234 bytes and 97.0% of a crib one, and the key schedule is the bill.
 [benchmarks.md](benchmarks.md) has the table.
 
 That has a practical consequence for anyone trying to make the search faster: optimising the transform
@@ -37,13 +37,13 @@ they took the crib sweep from 105,452 keys/sec to 383,173 on the same two cores.
 Where the rest of the schedule goes is measured now. Fisher-Yates draws `nextInt(i + 1)` for `i` from
 255 down to 1, so almost every bound is not a power of two, and `nextInt` handles those with a
 rejection loop built on an integer division. Drawing 1,275 times at the shuffle's own bounds costs
-2.685 us against 1.001 at a bound of 256, so the loop is 1.684 us per candidate: 34.2% of a
+2.665 us against 1.000 at a bound of 256, so the loop is 1.665 us per candidate: 32.8% of a
 ciphertext-only one at 234 bytes, and the largest single item in it. Not most of a sweep's life, as
 this page used to say, but more of it than anything else.
 
 None of that was visible until the atomic went. `java.util.Random` costs the same at either bound,
-9.152 us against 9.182, because the compare-and-set swamps the difference. Which also means the
-speedup from replacing it is 3.42x on the bounds the cipher actually uses, rather than the 9.14x the
+9.161 us against 9.201, because the compare-and-set swamps the difference. Which also means the
+speedup from replacing it is 3.45x on the bounds the cipher actually uses, rather than the 9.16x the
 two power-of-two figures suggest.
 
 [keyspace-sweep.md](keyspace-sweep.md) has the whole range actually swept: 4,294,967,296 keys in

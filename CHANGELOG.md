@@ -12,11 +12,11 @@ them, and one benchmark was measuring a workload the cipher never runs.
 
 ### Added
 
-- `docs/benchmarks.md`, the run and what it means. The key schedule is 73.6% of a ciphertext-only
-  candidate at 234 bytes and 96.5% of a crib one, which is the claim the rest of this repository
+- `docs/benchmarks.md`, the run and what it means. The key schedule is 71.6% of a ciphertext-only
+  candidate at 234 bytes and 97.0% of a crib one, which is the claim the rest of this repository
   rests on and which had never been measured. A candidate splits four ways: the generator at a
-  power-of-two bound, 20.3%; the rejection loop on the bounds a shuffle really uses, 34.2%; the rest
-  of the shuffling, 19.2%; the message, 26.4%.
+  power-of-two bound, 19.7%; the rejection loop on the bounds a shuffle really uses, 32.8%; the rest
+  of the shuffling, 19.1%; the message, 28.4%.
 - `RandomSourceBenchmark` draws at the bounds Fisher-Yates asks for as well as at 256. It only ever
   drew at 256 before, while these docs cited it for the cost of the loop that bound skips.
 - `CandidateBenchmark` takes a `messageSize`, over 80, 160, 234 and 1024. The 160-byte case rebuilds
@@ -32,10 +32,16 @@ them, and one benchmark was measuring a workload the cipher never runs.
   produced by running the cipher over two messages and comparing the ciphertexts, so neither carries
   a number anyone typed. `DiagramReproducibilityTest` fails the build if a committed figure stops
   matching what the data produces, which is the arrangement the quadgram table already lives under.
+- Two more figures, drawn from `docs/benchmarks.json` rather than typed beside it: where the time in
+  one candidate goes, and what a longer message costs each attack. `JmhResults` reads the run's own
+  result file, in about two hundred lines and with no new dependency, so a picture cannot drift from
+  the table above it. Both generators refuse to draw if the benchmarks they take differences of stop
+  nesting, which is the only thing standing between a bar chart and a plausible lie.
 - `ScoreHistogram` in the search, so a sweep can count every score into fixed bins rather than only
   ranking the top ten. Workers fill their own copy and the copies merge once they stop, the same way
   the leaderboard works. `SweepBenchmark` gained a parameter that measures what it costs, because
-  finding out after an hour of machine time is the wrong order.
+  finding out after an hour of machine time is the wrong order. That parameter does not give the same
+  answer twice; the page it feeds says so and shows every run.
 - `break --histogram <file>` writes the distribution the sweep saw. It needs `--language`, because
   a crib evaluator rejects almost every key without scoring it, and it refuses to run on a resumed
   checkpoint, because it counts only the keys of the run that is happening. The bin range is a
@@ -67,31 +73,40 @@ them, and one benchmark was measuring a workload the cipher never runs.
 - Every rate in `docs/keyspace-sweep.md` now comes from those two runs. The partial and resumed
   figures they replace were about 1.6 times below what this machine does, and the page says so.
 - The crib attack is 49% faster over the whole keyspace, not the 40% two partial runs suggested, and
-  not the 31% one candidate costs in JMH. The gap between the last two is `SeedSweep` rather than the
+  not the 36% one candidate costs in JMH. The gap between the last two is `SeedSweep` rather than the
   cipher: `QuadgramSearch` allocates a `Candidate` and touches the leaderboard for every key,
   `CribMatcher` returns `null` and allocates once in four billion.
 - A single uninterrupted run's headline rate is still not the rate the machine holds. Both runs
   opened about 1.4 times faster than they settled, so the totals sit 2 to 4% above the sustained
   figures. The page gives both and says to read the tail.
 - The two attacks do separate as the message grows, which these docs asserted for months on one
-  hardcoded message. Measured over four: the crib route is cheaper by 8.2% at 80 bytes, 21.5% at 160,
-  31.1% at 234 and 163% at 1024, and its own cost does not move at all, because it does not read the
-  message.
-- The rejection loop is not where a sweep spends most of its life, as these docs said. It is 34.2% of
+  hardcoded message. Measured over four: the crib route is cheaper by 10.6% at 80 bytes, 22.0% at
+  160, 35.5% at 234 and 166% at 1024, and its own cost does not move at all, because it does not read
+  the message.
+- The rejection loop is not where a sweep spends most of its life, as these docs said. It is 32.8% of
   a candidate: more than anything else, and not most. The speedup from replacing `java.util.Random`
-  is 3.42x at the bounds the cipher uses, not the 9.14x measured at a bound of 256 it never draws at.
+  is 3.45x at the bounds the cipher uses, not the 9.16x measured at a bound of 256 it never draws at.
   The compare-and-set swamps the difference, so `java.util.Random` costs the same either way and the
   loop was invisible underneath it until the atomic went.
 - The rates in `docs/keyspace-sweep.md` are slower than the same code runs at today. Two threads
-  measured 229,762 keys/sec there and reach 368,345 in JMH; the sixteen-thread segment reached 25.5%
-  of what sixteen unloaded threads would give. `SeedSweep` adds 0.138 us to a 4.929 us candidate,
-  2.8%, so almost none of that is software. The page says which side the difference is on now instead
-  of leaving it open.
+  measured 229,762 keys/sec there and reach 370,287 in JMH; the sixteen-thread segment reached 25.4%
+  of what sixteen unloaded threads would give. `SeedSweep`'s own cost is under about 3% of a
+  candidate, so almost none of that is software. The page says which side the difference is on now
+  instead of leaving it open.
 - The sweep was described as having run on two different machines. It ran on one, at two thread
   counts: two for the first 14.84% of the range, sixteen for the rest. Corrected in the README, in
   both docs pages and in the 1.1.0 entry below, which repeated it while correcting something else.
 - `admissibilityFilter` was charging itself for a `String.getBytes` inside the measured method. The
-  0.010 us it reported was wrong; it is 0.004.
+  0.010 us it reported was wrong; it is about 0.0045.
+- Every figure on `docs/benchmarks.md` comes from one run of the whole suite, committed as
+  `docs/benchmarks.json` and named on the page. The suite was run twice, because the first attempt
+  came out with `TransformBenchmark` reading 47% low at 65,536 bytes and error bars up to 52.6%, and
+  a diagnostic re-run put it back where it had been. The clean run cost two claims. The 0.138 us of
+  `SeedSweep` overhead was the difference between two separately measured benchmarks, and running
+  both again turns that difference negative, so only a bound survives. The histogram's cost measured
+  between -0.3% and +12.7% across five runs of one benchmark on one machine, so what the docs quote
+  for it is the pair of hour-long runs, 2.4%, and the page prints all five microbenchmark figures
+  rather than the one it happens to have an artifact for.
 
 ## [1.1.0] - 2026-08-13
 

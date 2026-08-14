@@ -122,7 +122,7 @@ threads for the ciphertext-only attack. The same attack on the same machine meas
 
 | | crib | ciphertext only | crib is faster by |
 |---|---|---|---|
-| one candidate, JMH, 234 bytes | 3.760 us | 4.929 us | 31.1% |
+| one candidate, JMH, 234 bytes | 3.743 us | 5.073 us | 35.5% |
 | whole keyspace, as reported | 1,755,375 keys/sec | 1,150,873 keys/sec | 52.5% |
 | whole keyspace, last quarter | 1,688,273 keys/sec | 1,132,639 keys/sec | 49.1% |
 
@@ -131,29 +131,30 @@ on the strength of two partial runs. The number to quote is the last row: two co
 machine, one afternoon.
 
 The interesting part is that the sweep advantage is larger than the evaluator advantage. At the
-level of one candidate the crib route saves 31%; over four billion of them it saves 49%. The extra
+level of one candidate the crib route saves 36%; over four billion of them it saves 49%. The extra
 comes from what `SeedSweep` does around the evaluator rather than inside it. `QuadgramSearch`
 returns a `Candidate` for every key, which is an allocation and a leaderboard comparison four
 billion times. `CribMatcher` returns `null` unless every crib byte matches, so it allocates once, on
 the one key in four billion that survives. Measured against the JMH figures, a key inside the
-ciphertext-only sweep costs 2.87 times what its evaluator costs alone, and a key inside the crib
-sweep 2.52 times. The rest of that multiple is the sixteen threads: six performance cores and ten
+ciphertext-only sweep costs 2.78 times what its evaluator costs alone, and a key inside the crib
+sweep 2.53 times. The rest of that multiple is the sixteen threads: six performance cores and ten
 efficiency-class ones, at sustained load.
 
 That is also why the projection made before these runs was wrong. It scaled by the evaluator ratio,
-1.311, and predicted 53 minutes for the ciphertext-only sweep against the 62.2 it took, 16% out.
-Scaled by the sweep ratio it would have been 2% out. Neither attack's cost is the evaluator's cost.
+1.311 in the benchmark run the page then had, and predicted 53 minutes for the ciphertext-only sweep
+against the 62.2 it took, 16% out. Scaled by the sweep ratio it would have been 2% out. Neither
+attack's cost is the evaluator's cost.
 
 ## What these rates do not reconcile with
 
 They reconcile now, and the answer was not the software.
 
-[benchmarks.md](benchmarks.md) drives `SeedSweep` itself through JMH: it adds 0.138 us to a
-candidate that costs 4.929 in the evaluator, 2.8%, and two threads scale at 93% of one. The gap
-between the earlier run's figures and what this code does was never `SeedSweep`. It was that run's
-conditions, and two independent measurements agree on the size of it: at two threads, JMH reaches
-368,345 keys/sec against the 229,762 that run measured, 1.60 times; and the crib sweep here came in
-1.66 times faster than a projection built on that run's sixteen-thread rate.
+[benchmarks.md](benchmarks.md) drives `SeedSweep` itself through JMH. Its own cost comes out under
+about 3% of a candidate, which is as tight as that suite can put it, and two threads scale at 93.5%
+of one. The gap between the earlier run's figures and what this code does was never `SeedSweep`. It
+was that run's conditions, and two independent measurements agree on the size of it: at two threads,
+JMH reaches 370,287 keys/sec against the 229,762 that run measured, 1.61 times; and the crib sweep
+here came in 1.66 times faster than a projection built on that run's sixteen-thread rate.
 
 So the figures from that run were roughly 1.6 times below what the machine does, at every thread
 count, for reasons nobody recorded at the time. The two runs on this page replace them.
@@ -169,7 +170,9 @@ byte-enigma break --crib "THIRTY TWO BIT KEY" --at 36 --in message.b64 --top 10 
 
 Both default to the entire keyspace and are told nothing else. Add `--threads` to pin the count; the
 runs here used 16. Add `--histogram <file>` to the language sweep and it writes the distribution as
-well as the leaderboard, which costs about 2.4% of the run.
+well as the leaderboard, which costs about 2.4% of the run. That figure is this pair of runs, 63.7
+minutes against 62.2. The microbenchmark that should settle it does not agree with itself; see
+[benchmarks.md](benchmarks.md#what-the-histogram-costs).
 
 `--checkpoint` is what makes a run this long practical. The sweep walks the range in segments and
 records where it got to after each one, so it can be stopped at any point and picked up by running

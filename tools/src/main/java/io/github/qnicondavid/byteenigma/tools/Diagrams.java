@@ -27,6 +27,9 @@ public final class Diagrams {
         figures.put("docs/key-reuse.svg", KeyReuseDiagram.render());
         figures.put("docs/score-distribution.svg", ScoreDistributionDiagram.render(
                 root.resolve("docs/score-histogram.tsv"), root.resolve("docs/keyspace-sweep.state")));
+        Path benchmarks = root.resolve("docs/benchmarks.json");
+        figures.put("docs/candidate-split.svg", CandidateSplitDiagram.render(benchmarks));
+        figures.put("docs/attack-scaling.svg", AttackScalingDiagram.render(benchmarks));
         return figures;
     }
 

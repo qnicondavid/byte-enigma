@@ -22,8 +22,12 @@ nothing. Two of them were right anyway and now have numbers. One was wrong.
 
 ```
 mvn -B -ntp -pl benchmarks -am package
-java -jar benchmarks/target/benchmarks.jar
+java -jar benchmarks/target/benchmarks.jar -rf json -rff docs/benchmarks.json
 ```
+
+JMH ends that file with the platform's line separator, so on Windows the last line of it arrives as
+CRLF and `git add` refuses the file. Convert it to LF before committing. Every other generated file
+here is written with `\n` in the generator and does not have the problem.
 
 Every figure here comes from one run of the whole suite, committed as `docs/benchmarks.json`. Nothing
 is spliced in from another run. That matters more than it sounds: the same benchmark moves a few

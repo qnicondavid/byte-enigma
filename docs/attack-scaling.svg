@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 470" width="880" height="470"
+     font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" role="img"
+     aria-labelledby="scale-title scale-desc">
+  <title id="scale-title">What a longer message costs each attack</title>
+  <desc id="scale-desc">Three lines against message length, in microseconds a candidate. The key
+    schedule is flat at about 3.6. The crib attack is flat just above it, from 3.799 microseconds at 80
+    bytes to 3.825 at 1024, because it decrypts a sixteen-byte window whatever the message length is.
+    The ciphertext-only attack climbs from 4.200 to 10.169, because it decrypts all of it, and the shaded
+    gap between the two widens from 10.6 percent to 166 percent.</desc>
+
+  <text x="96" y="36" font-size="15" fill="#8b949e">Both attacks pay the key schedule. Only one of them reads the message.</text>
+  <text x="96" y="58" font-size="13" fill="#7d8590">Microseconds a candidate, three rotors, against message length in bytes.</text>
+
+  <line x1="110" y1="400" x2="760" y2="400" stroke="#7d8590" stroke-width="1" stroke-opacity="0.25"/>
+  <text x="100" y="404" font-size="11" fill="#7d8590" text-anchor="end">0</text>
+  <line x1="110" y1="345" x2="760" y2="345" stroke="#7d8590" stroke-width="1" stroke-opacity="0.25"/>
+  <text x="100" y="349" font-size="11" fill="#7d8590" text-anchor="end">2</text>
+  <line x1="110" y1="291" x2="760" y2="291" stroke="#7d8590" stroke-width="1" stroke-opacity="0.25"/>
+  <text x="100" y="295" font-size="11" fill="#7d8590" text-anchor="end">4</text>
+  <line x1="110" y1="236" x2="760" y2="236" stroke="#7d8590" stroke-width="1" stroke-opacity="0.25"/>
+  <text x="100" y="240" font-size="11" fill="#7d8590" text-anchor="end">6</text>
+  <line x1="110" y1="182" x2="760" y2="182" stroke="#7d8590" stroke-width="1" stroke-opacity="0.25"/>
+  <text x="100" y="186" font-size="11" fill="#7d8590" text-anchor="end">8</text>
+  <line x1="110" y1="127" x2="760" y2="127" stroke="#7d8590" stroke-width="1" stroke-opacity="0.25"/>
+  <text x="100" y="131" font-size="11" fill="#7d8590" text-anchor="end">10</text>
+
+  <path d="M 157 285 L 205 273 L 248 262 L 715 123 L 715 296 L 248 298 L 205 296 L 157 296 Z" fill="#bf8700" fill-opacity="0.14"/>
+
+  <polyline points="157,301 205,301 248,301 715,301" fill="none" stroke="#7d8590" stroke-width="1.6" stroke-dasharray="4 4"/>
+  <polyline points="157,296 205,296 248,298 715,296" fill="none" stroke="#2f9e57" stroke-width="2.2"/>
+  <polyline points="157,285 205,273 248,262 715,123" fill="none" stroke="#bf8700" stroke-width="2.2"/>
+  <circle cx="157" cy="296" r="4" fill="#2f9e57"/>
+  <circle cx="157" cy="285" r="4" fill="#bf8700"/>
+  <circle cx="205" cy="296" r="4" fill="#2f9e57"/>
+  <circle cx="205" cy="273" r="4" fill="#bf8700"/>
+  <circle cx="248" cy="298" r="4" fill="#2f9e57"/>
+  <circle cx="248" cy="262" r="4" fill="#bf8700"/>
+  <circle cx="715" cy="296" r="4" fill="#2f9e57"/>
+  <circle cx="715" cy="123" r="4" fill="#bf8700"/>
+
+  <line x1="110" y1="400" x2="760" y2="400" stroke="#7d8590" stroke-width="1.5"/>
+  <line x1="157" y1="400" x2="157" y2="406" stroke="#7d8590" stroke-width="1"/>
+  <text x="157" y="421" font-size="11" fill="#7d8590" text-anchor="middle">80</text>
+  <line x1="205" y1="400" x2="205" y2="406" stroke="#7d8590" stroke-width="1"/>
+  <text x="205" y="421" font-size="11" fill="#7d8590" text-anchor="middle">160</text>
+  <line x1="248" y1="400" x2="248" y2="406" stroke="#7d8590" stroke-width="1"/>
+  <text x="248" y="421" font-size="11" fill="#7d8590" text-anchor="middle">234</text>
+  <line x1="715" y1="400" x2="715" y2="406" stroke="#7d8590" stroke-width="1"/>
+  <text x="715" y="421" font-size="11" fill="#7d8590" text-anchor="middle">1024</text>
+
+  <text x="157" y="275" font-size="11" fill="#bf8700" text-anchor="middle">10.6%</text>
+  <text x="205" y="263" font-size="11" fill="#bf8700" text-anchor="middle">22.0%</text>
+  <text x="248" y="252" font-size="11" fill="#bf8700" text-anchor="middle">35.5%</text>
+  <text x="699" y="210" font-size="13" fill="#bf8700" text-anchor="end">166% dearer</text>
+
+  <text x="729" y="127" font-size="12" fill="#bf8700">ciphertext only</text>
+  <text x="729" y="290" font-size="12" fill="#2f9e57">with a crib</text>
+  <text x="729" y="317" font-size="12" fill="#7d8590">rekey only</text>
+
+  <text x="96" y="456" font-size="12" fill="#7d8590">Drawn from docs/benchmarks.json. The dashed line is the key schedule, which neither attack can skip.</text>
+</svg>

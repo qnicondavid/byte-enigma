@@ -32,6 +32,16 @@ them, and one benchmark was measuring a workload the cipher never runs.
   produced by running the cipher over two messages and comparing the ciphertexts, so neither carries
   a number anyone typed. `DiagramReproducibilityTest` fails the build if a committed figure stops
   matching what the data produces, which is the arrangement the quadgram table already lives under.
+- `DocumentationLinksTest` walks every markdown file in the tree and resolves every local link and
+  every heading anchor in it. The commit that added the figures pointed `docs/benchmarks.md` at two
+  of them and carried neither, which made a page of broken images and a red build on every clean
+  checkout, and nothing in the build noticed until CI did. This notices in the second it takes.
+- `TransformBenchmark.withANonceThatChangesNothing`, which runs the nonced overload from the
+  starting positions the textbook path uses. The nonce arm has measured about 5% faster than the
+  plain one at 65,536 bytes in four runs out of four, and the two differ only in where the rotors
+  start and in which overload is being compiled. This holds the first of those fixed. The nonce is
+  searched for at setup rather than written down, because a constant in a benchmark is a claim
+  nobody checks.
 - Two more figures, drawn from `docs/benchmarks.json` rather than typed beside it: where the time in
   one candidate goes, and what a longer message costs each attack. `JmhResults` reads the run's own
   result file, in about two hundred lines and with no new dependency, so a picture cannot drift from
@@ -96,6 +106,10 @@ them, and one benchmark was measuring a workload the cipher never runs.
 - The sweep was described as having run on two different machines. It ran on one, at two thread
   counts: two for the first 14.84% of the range, sixteen for the rest. Corrected in the README, in
   both docs pages and in the 1.1.0 entry below, which repeated it while correcting something else.
+- The warning about the nonce at 65,536 bytes no longer says the result is impossible because a
+  nonce adds work. It does add work: one reseed and three draws, once per operation, against 65,536
+  substitutions, and then the identical loop. The two arms do not differ in work per byte at all,
+  which makes the 5% harder to dismiss rather than easier.
 - `admissibilityFilter` was charging itself for a `String.getBytes` inside the measured method. The
   0.010 us it reported was wrong; it is about 0.0045.
 - Every figure on `docs/benchmarks.md` comes from one run of the whole suite, committed as

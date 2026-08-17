@@ -163,11 +163,17 @@ The transform costs about 5 ns a byte, and two harnesses agree on it: 1024 bytes
 and the same 1024 bytes take 5.25 us as the gap between `rekeyAndFullTransform` and `rekeyOnly`.
 
 One cell is a standing warning. At 65,536 bytes the nonce scores *higher* than the plain transform,
-which is impossible, since it moves the starting offsets and adds work. It has now done that in every
-run of this benchmark, four of them, by about 5% each time. Any one run leaves a sliver of overlap
-between the two error bars, so no single run separates them; four runs with the same sign are harder
-to wave away. Something about that measurement is wrong and this page does not know what. Do not read
-any 2% difference on it as a result.
+and it has done that in every run of this benchmark, four of them, by about 5% each time. Any one run
+leaves a sliver of overlap between the two error bars, so no single run separates them. Four with the
+same sign are harder to wave away.
+
+This page used to call that impossible on the grounds that a nonce adds work. It does, and the amount
+does not deserve the word. `transform(input, output)` calls `resetPositions`, `transform(input,
+output, nonce)` calls `seedPositions`, and both then hand the same loop the same bytes.
+`seedPositions` is one reseed and three draws, once per operation, against 65,536 substitutions. The
+two benchmarks do not differ in work per byte at all. They differ in where the rotors start, which is
+data rather than code, and in which overload the compiler is looking at. Neither should be worth 5%,
+and this page does not know which of them is. Do not read any 2% difference on it as a result.
 
 ## The sweep itself
 

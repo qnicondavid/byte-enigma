@@ -162,18 +162,26 @@ a sweep is won.
 The transform costs about 5 ns a byte, and two harnesses agree on it: 1024 bytes take 5.02 us here
 and the same 1024 bytes take 5.25 us as the gap between `rekeyAndFullTransform` and `rekeyOnly`.
 
-One cell is a standing warning. At 65,536 bytes the nonce scores *higher* than the plain transform,
-and it has done that in every run of this benchmark, four of them, by about 5% each time. Any one run
-leaves a sliver of overlap between the two error bars, so no single run separates them. Four with the
-same sign are harder to wave away.
+One cell was called impossible on this page for four runs, and it is not. At 65,536 bytes the nonce
+scores higher than `allocating`. `allocating` allocates 65,536 bytes per operation and hands them
+back; the nonce overload writes into a buffer the caller already owns. One of them does work the
+other does not, so the column to read the nonce against is `reusingABuffer`, which does not allocate
+either. The comparison ran across an allocation and the conclusion was drawn from it anyway.
 
-This page used to call that impossible on the grounds that a nonce adds work. It does, and the amount
-does not deserve the word. `transform(input, output)` calls `resetPositions`, `transform(input,
-output, nonce)` calls `seedPositions`, and both then hand the same loop the same bytes.
-`seedPositions` is one reseed and three draws, once per operation, against 65,536 substitutions. The
-two benchmarks do not differ in work per byte at all. They differ in where the rotors start, which is
-data rather than code, and in which overload the compiler is looking at. Neither should be worth 5%,
-and this page does not know which of them is. Do not read any 2% difference on it as a result.
+The three message sizes finish the argument. Against `allocating` the nonce is 6.3% slower at 64
+bytes, 2.8% slower at 1024, and 4.8% faster at 65,536. That is the shape of a cost paid once per
+operation: it dominates 64 bytes and disappears into 65,536. The cost is `seedPositions`, one reseed
+and three draws, where `transform(input, output)` calls `resetPositions` instead, and both overloads
+then hand the same loop the same bytes.
+
+What is left is the largest cell against `reusingABuffer`: 3.7% in this run, then 2.25% and 1.5% in
+two later ones, with the two error bars overlapping every time.
+`TransformBenchmark.withANonceThatChangesNothing` exists to close that. It runs the nonced overload
+with a nonce that leaves the rotors where the textbook path leaves them, which removes the only
+difference between the two that is not a constant, and it came out 0.65% below the nonce arm in one
+of those runs and 2.4% above it in the other. A shrinking difference, intervals that never separate,
+and a control that points both ways. Do not read any 2% difference on this page as a result, which is
+what four runs of describing this one should already have taught.
 
 ## The sweep itself
 
@@ -229,6 +237,14 @@ The other four put the cost near a percent at two threads and near three at one,
 that is not a microbenchmark agrees with them: the whole keyspace with the histogram took 63.7
 minutes against 62.2 without, 2.4%, on sixteen threads. Use that. The outlier stays in the table
 because dropping it would make the benchmark look steadier than it is.
+
+A third suite was run to find out whether those two cells go strange again when they are again the
+last two of a long run. It cannot answer. Twenty-eight of its fifty-one measurements came out at
+least 15% slower than the run this page reports, several more than twice as slow, with error bars up
+to 45.7%, and the load arrived and left during the run rather than sitting on it: `cribEvaluator` was
+untouched in the same suite that doubled `rekeyOnly`, which is impossible as work and ordinary as
+scheduling. That run is not in this repository. One suite in three has come out clean on this
+machine, and that, rather than anything in the code, is where the histogram question stops.
 
 ## What this still does not measure
 

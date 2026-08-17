@@ -23,7 +23,7 @@ the library has none.
 <dependency>
   <groupId>com.github.qnicondavid.byte-enigma</groupId>
   <artifactId>byte-enigma</artifactId>
-  <version>v1.1.0</version>
+  <version>v1.2.0</version>
 </dependency>
 ```
 

@@ -3,7 +3,7 @@
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versions follow
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.2.0] - 2026-08-17
 
 The benchmarks were run. They had never been run: the suite compiled and sat in the reactor for
 months, because the environment the work was done in could not reach Maven Central, while these docs
@@ -106,10 +106,21 @@ them, and one benchmark was measuring a workload the cipher never runs.
 - The sweep was described as having run on two different machines. It ran on one, at two thread
   counts: two for the first 14.84% of the range, sixteen for the rest. Corrected in the README, in
   both docs pages and in the 1.1.0 entry below, which repeated it while correcting something else.
-- The warning about the nonce at 65,536 bytes no longer says the result is impossible because a
-  nonce adds work. It does add work: one reseed and three draws, once per operation, against 65,536
-  substitutions, and then the identical loop. The two arms do not differ in work per byte at all,
-  which makes the 5% harder to dismiss rather than easier.
+- The nonce at 65,536 bytes is no longer described as impossible. It was compared against
+  `allocating`, which allocates 65,536 bytes an operation, while the nonced overload writes into a
+  buffer the caller owns, so one of the two was doing work the other was not and the gap was drawn
+  across it. Read against `reusingABuffer` instead, the nonce is 6.3% slower at 64 bytes, 2.8%
+  slower at 1024 and faster only at 65,536, which is what a cost paid once an operation looks like.
+  What is left of the largest cell measures 3.7%, then 2.25%, then 1.5% over three runs, with the
+  error bars overlapping every time and the new control landing on both sides of it.
+- The histogram question stops where the machine stops. A third suite was run to see whether the
+  outlier returns when its two cells are again the last two of a long run, and twenty-eight of its
+  fifty-one measurements came out at least 15% slower than the published run, several more than
+  twice as slow, with the load arriving and leaving mid-run rather than sitting on it. That run is
+  not committed. One suite in three has come out clean here, and the page says so.
+- The build instructions say `mvn verify` rather than `mvn test`, which is what CI runs and what
+  catches a packaging failure as well as a test one. The figure beside it is that command on one
+  desktop, 145 tests in 5.9 seconds, and not the older `mvn test` measurement it replaces.
 - `admissibilityFilter` was charging itself for a `String.getBytes` inside the measured method. The
   0.010 us it reported was wrong; it is about 0.0045.
 - Every figure on `docs/benchmarks.md` comes from one run of the whole suite, committed as
@@ -242,5 +253,6 @@ recording anyway, because both changed the golden vector and both were deliberat
   `String.hashCode` collides on structure rather than chance, so `"Aa"` and `"BB"` produced identical
   ciphertext.
 
+[1.2.0]: https://github.com/qnicondavid/byte-enigma/releases/tag/v1.2.0
 [1.1.0]: https://github.com/qnicondavid/byte-enigma/releases/tag/v1.1.0
 [1.0.0]: https://github.com/qnicondavid/byte-enigma/releases/tag/v1.0.0

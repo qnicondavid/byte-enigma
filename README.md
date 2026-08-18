@@ -203,7 +203,7 @@ Inside `core`:
 ## Building
 
 ```
-mvn verify                   # 145 tests, 5.9 s on one desktop
+mvn verify                   # 148 tests, 5.9 s on one desktop
 mvn -Pdist package           # builds core/target/byte-enigma.jar
 mvn -pl benchmarks -am package   # builds benchmarks/target/benchmarks.jar
 java -jar benchmarks/target/benchmarks.jar

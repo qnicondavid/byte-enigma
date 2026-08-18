@@ -3,6 +3,35 @@
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versions follow
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+
+- Every figure keeps one set of margins. Markdown puts an image flush with the text column and scales
+  it to fit, so a margin drawn inside a figure is a margin between that figure and the paragraph
+  above it, and one that grows and shrinks with the window rather than staying put. The six were
+  drawing six different ones: left edges from 16 units to 96 out of 880, right edges from 5.7% of the
+  width to 13.6%, and the space above the first mark from 5.8% of the height to 18.1%. All six now
+  start their ink eight units in, stop eight units short, print their first line on one baseline and
+  leave the same room under their last.
+- `docs/signal-path.svg` is generated rather than written by hand, which is how its margins came to
+  differ from the other five to begin with. Its boxes are sized to the longest label they carry:
+  `steps every byte` measured 106 units inside an 88-unit box and hung out of both sides of it. Its
+  last line of caption sat two units above the bottom edge, so the descenders were cut off.
+- The green label naming the key in `docs/score-distribution.svg` sat 56 units below the dot it names
+  and under the row of tick numbers, where it read as part of the panel underneath. It sits beside
+  the dot now.
+- The first and last number on an axis anchor to their own ends rather than centring on the tick, so
+  they stay inside the figure instead of hanging over its edge. The magnification quoted in
+  `docs/score-gap.svg` reads 54 rather than 45, because it is computed from the two axes and both of
+  them grew.
+
+### Added
+
+- `FigureNormTest` measures where each figure's ink starts and stops and fails the build when one of
+  them drifts. `FigureInk` does the measuring: geometry exactly, strings from the advance width of a
+  monospace character, which is why the check allows two units of slack on an edge a string defines.
+
 ## [1.2.0] - 2026-08-17
 
 The benchmarks were run. They had never been run: the suite compiled and sat in the reactor for

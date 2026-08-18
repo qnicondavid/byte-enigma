@@ -18,8 +18,13 @@ import java.nio.file.Path;
  */
 final class CandidateSplitDiagram {
 
-    private static final int X0 = 200;
-    private static final int X1 = 830;
+    /** Far enough right that the longer of the two row labels starts on the figure's left edge. */
+    private static final int X0 = 140;
+
+    private static final int X1 = Svg.RIGHT;
+
+    /** Where a row label ends, ten units clear of the bar it names. */
+    private static final int ROW_LABEL = X0 - 10;
 
     private static final int BAR_TOP = 118;
     private static final int CRIB_TOP = 192;
@@ -27,6 +32,9 @@ final class CandidateSplitDiagram {
 
     /** A gap between segments, so four blocks read as four. */
     private static final double SEPARATION = 3.0;
+
+    /** The last line sits {@link Svg#BOTTOM} above the edge, and nothing is drawn below it. */
+    private static final int CANVAS = 462 + Svg.BOTTOM;
 
     private CandidateSplitDiagram() {
     }
@@ -54,7 +62,8 @@ final class CandidateSplitDiagram {
         }
 
         Svg svg = new Svg();
-        svg.line("<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 880 470\" width=\"880\" height=\"470\"");
+        svg.format("<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 %d %d\" width=\"%d\" height=\"%d\"",
+                Svg.WIDTH, CANVAS, Svg.WIDTH, CANVAS);
         svg.format("     font-family=\"%s\" role=\"img\"", Svg.FONT);
         svg.line("     aria-labelledby=\"split-title split-desc\">");
         svg.line("  <title id=\"split-title\">Where the time in one candidate goes</title>");
@@ -64,8 +73,8 @@ final class CandidateSplitDiagram {
         svg.format("    and the rest of the shuffling at %.3f. Only the short end differs: %.3f microseconds to read the", rest, message);
         svg.format("    whole message and score it, against %.3f to read the crib window and compare it.</desc>", window);
         svg.line("");
-        svg.format("  <text x=\"96\" y=\"36\" font-size=\"15\" fill=\"%s\">One key tried against a 234-byte message, three rotors.</text>", Svg.GREY);
-        svg.format("  <text x=\"96\" y=\"58\" font-size=\"13\" fill=\"%s\">Both attacks build the same machine first. What they do after it is the short end on the right.</text>", Svg.DIM);
+        svg.format("  <text x=\"%d\" y=\"%d\" font-size=\"15\" fill=\"%s\">One key tried against a 234-byte message, three rotors.</text>", Svg.LEFT, Svg.FIRST_BASELINE, Svg.GREY);
+        svg.format("  <text x=\"%d\" y=\"%d\" font-size=\"13\" fill=\"%s\">Both attacks build the same machine first. What they do after it is the short end on the right.</text>", Svg.LEFT, Svg.SECOND_BASELINE, Svg.DIM);
         svg.line("");
 
         int scheduleEnd = x(schedule, language);
@@ -88,10 +97,10 @@ final class CandidateSplitDiagram {
         segment(svg, CRIB_TOP, base + loop, schedule, language, Svg.DIM, "0.66");
         segment(svg, CRIB_TOP, schedule, crib, language, Svg.GREEN, "0.85");
 
-        svg.format("  <text x=\"190\" y=\"%d\" font-size=\"13\" fill=\"%s\" text-anchor=\"end\">ciphertext only</text>",
-                BAR_TOP + 27, Svg.GREY);
-        svg.format("  <text x=\"190\" y=\"%d\" font-size=\"13\" fill=\"%s\" text-anchor=\"end\">with a crib</text>",
-                CRIB_TOP + 27, Svg.GREY);
+        svg.format("  <text x=\"%d\" y=\"%d\" font-size=\"13\" fill=\"%s\" text-anchor=\"end\">ciphertext only</text>",
+                ROW_LABEL, BAR_TOP + 27, Svg.GREY);
+        svg.format("  <text x=\"%d\" y=\"%d\" font-size=\"13\" fill=\"%s\" text-anchor=\"end\">with a crib</text>",
+                ROW_LABEL, CRIB_TOP + 27, Svg.GREY);
         for (int i = 0; i < 4; i++) {
             svg.format("  <text x=\"%d\" y=\"180\" font-size=\"12\" fill=\"%s\" text-anchor=\"middle\">%.1f%%</text>",
                     Svg.px((x(cuts[i], language) + x(cuts[i + 1], language)) / 2.0),
@@ -105,8 +114,8 @@ final class CandidateSplitDiagram {
         for (int tick = 0; tick <= 5; tick++) {
             svg.format("  <line x1=\"%d\" y1=\"%d\" x2=\"%d\" y2=\"%d\" stroke=\"%s\" stroke-width=\"1\"/>",
                     x(tick, language), axis, x(tick, language), axis + 6, Svg.DIM);
-            svg.format("  <text x=\"%d\" y=\"%d\" font-size=\"11\" fill=\"%s\" text-anchor=\"middle\">%d</text>",
-                    x(tick, language), axis + 21, Svg.DIM, tick);
+            svg.format("  <text x=\"%d\" y=\"%d\" font-size=\"11\" fill=\"%s\" text-anchor=\"%s\">%d</text>",
+                    x(tick, language), axis + 21, Svg.DIM, Svg.tickAnchor(tick, 6), tick);
         }
         svg.format("  <text x=\"%d\" y=\"%d\" font-size=\"12\" fill=\"%s\">microseconds</text>", X0, axis + 42, Svg.DIM);
         svg.line("");
@@ -123,15 +132,18 @@ final class CandidateSplitDiagram {
         String[] swatches = {Svg.DIM, Svg.AMBER, Svg.DIM, Svg.GREEN, Svg.GREEN};
         String[] swatchOpacity = {"0.38", "0.92", "0.66", "0.85", "0.85"};
         for (int i = 0; i < names.length; i++) {
-            int y = 336 + i * 22;
-            svg.format("  <rect x=\"200\" y=\"%d\" width=\"12\" height=\"12\" fill=\"%s\" fill-opacity=\"%s\"/>",
-                    y - 10, swatches[i], swatchOpacity[i]);
-            svg.format("  <text x=\"222\" y=\"%d\" font-size=\"12\" fill=\"%s\">%s</text>", y, Svg.DIM, names[i]);
-            svg.format("  <text x=\"830\" y=\"%d\" font-size=\"12\" fill=\"%s\" text-anchor=\"end\">%.3f us, %.1f%%</text>",
-                    y, Svg.DIM, values[i], values[i] / wholes[i] * 100.0);
+            int y = 330 + i * 22;
+            svg.format("  <rect x=\"%d\" y=\"%d\" width=\"12\" height=\"12\" fill=\"%s\" fill-opacity=\"%s\"/>",
+                    X0, y - 10, swatches[i], swatchOpacity[i]);
+            svg.format("  <text x=\"%d\" y=\"%d\" font-size=\"12\" fill=\"%s\">%s</text>", X0 + 22, y, Svg.DIM, names[i]);
+            svg.format("  <text x=\"%d\" y=\"%d\" font-size=\"12\" fill=\"%s\" text-anchor=\"end\">%.3f us, %.1f%%</text>",
+                    Svg.RIGHT, y, Svg.DIM, values[i], values[i] / wholes[i] * 100.0);
         }
         svg.line("");
-        svg.format("  <text x=\"96\" y=\"456\" font-size=\"12\" fill=\"%s\">Drawn from docs/benchmarks.json. Green is the only part that depends on the message. Each share is of the bar it sits in.</text>", Svg.DIM);
+        svg.format("  <text x=\"%d\" y=\"%d\" font-size=\"12\" fill=\"%s\">Drawn from docs/benchmarks.json. Green is the only part that depends on the message.</text>",
+                Svg.LEFT, CANVAS - Svg.BOTTOM - 18, Svg.DIM);
+        svg.format("  <text x=\"%d\" y=\"%d\" font-size=\"12\" fill=\"%s\">Each share is of the bar its own segment sits in, so the crib window is measured against the shorter one.</text>",
+                Svg.LEFT, CANVAS - Svg.BOTTOM, Svg.DIM);
         svg.line("</svg>");
         return svg.toString();
     }

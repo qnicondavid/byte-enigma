@@ -18,17 +18,22 @@ final class ScoreGapDiagram {
 
     private static final double LO = -1850.0;
     private static final double HI = -1600.0;
-    private static final int X0 = 96;
-    private static final int X1 = 800;
+    private static final int X0 = Svg.LEFT;
+    private static final int X1 = Svg.RIGHT;
     private static final int AXIS = 168;
 
     private static final double ZLO = -1830.2;
     private static final double ZHI = -1826.4;
-    private static final int Z0 = 240;
-    private static final int Z1 = 720;
+    /** Far enough right that the four-line note beside the magnified axis clears it. */
+    private static final int Z0 = 160;
+
+    private static final int Z1 = Svg.RIGHT;
     private static final int ZAXIS = 318;
 
     private static final int BRACKET = 108;
+
+    /** The last line sits {@link Svg#BOTTOM} above the edge, and nothing is drawn below it. */
+    private static final int HEIGHT = ZAXIS + 36 + Svg.BOTTOM;
 
     private ScoreGapDiagram() {
     }
@@ -60,7 +65,8 @@ final class ScoreGapDiagram {
         int hiX = sx(best);
 
         Svg svg = new Svg();
-        svg.line("<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 880 372\" width=\"880\" height=\"372\"");
+        svg.format("<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 %d %d\" width=\"%d\" height=\"%d\"",
+                Svg.WIDTH, HEIGHT, Svg.WIDTH, HEIGHT);
         svg.format("     font-family=\"%s\" role=\"img\"", Svg.FONT);
         svg.line("     aria-labelledby=\"gap-title gap-desc\">");
         svg.line("  <title id=\"gap-title\">The margin between the key and every other key</title>");
@@ -69,23 +75,26 @@ final class ScoreGapDiagram {
         svg.format("    key sits far to the right at %.2f, a margin of %.2f. A second axis below magnifies the", best, margin);
         svg.line("    clump so the nine can be told apart.</desc>");
         svg.line("");
-        svg.format("  <text x=\"96\" y=\"40\" font-size=\"15\" fill=\"%s\">%,d keys tried, from the ciphertext alone.</text>",
-                Svg.GREY, sweep.keysTried());
-        svg.format("  <text x=\"96\" y=\"62\" font-size=\"13\" fill=\"%s\">Further right means the bytes that came out read more like English.</text>",
-                Svg.DIM);
+        svg.format("  <text x=\"%d\" y=\"%d\" font-size=\"15\" fill=\"%s\">%,d keys tried, from the ciphertext alone.</text>",
+                Svg.LEFT, Svg.FIRST_BASELINE, Svg.GREY, sweep.keysTried());
+        svg.format("  <text x=\"%d\" y=\"%d\" font-size=\"13\" fill=\"%s\">Further right means the bytes that came out read more like English.</text>",
+                Svg.LEFT, Svg.SECOND_BASELINE, Svg.DIM);
         svg.line("");
         svg.format("  <path d=\"M %d %d L %d %d L %d %d L %d %d\" fill=\"none\" stroke=\"%s\" stroke-width=\"1.5\"/>",
                 loX, AXIS - 16, loX, BRACKET, hiX, BRACKET, hiX, AXIS - 16, Svg.AMBER);
         svg.format("  <text x=\"%d\" y=\"%d\" font-size=\"16\" fill=\"%s\" text-anchor=\"middle\">a margin of %.2f log-units</text>",
                 Svg.px((loX + hiX) / 2.0), BRACKET - 12, Svg.AMBER, margin);
         svg.line("");
-        svg.format("  <line x1=\"96\" y1=\"%d\" x2=\"808\" y2=\"%d\" stroke=\"%s\" stroke-width=\"1.5\"/>", AXIS, AXIS, Svg.DIM);
-        for (int tick = -1850; tick <= -1600; tick += 50) {
+        svg.format("  <line x1=\"%d\" y1=\"%d\" x2=\"%d\" y2=\"%d\" stroke=\"%s\" stroke-width=\"1.5\"/>",
+                X0, AXIS, X1, AXIS, Svg.DIM);
+        int ticks = 1 + (-1600 - -1850) / 50;
+        for (int i = 0; i < ticks; i++) {
+            int tick = -1850 + i * 50;
             int x = sx(tick);
             svg.format("  <line x1=\"%d\" y1=\"%d\" x2=\"%d\" y2=\"%d\" stroke=\"%s\" stroke-width=\"1\"/>",
                     x, AXIS, x, AXIS + 7, Svg.DIM);
-            svg.format("  <text x=\"%d\" y=\"%d\" font-size=\"11\" fill=\"%s\" text-anchor=\"middle\">%d</text>",
-                    x, AXIS + 24, Svg.DIM, tick);
+            svg.format("  <text x=\"%d\" y=\"%d\" font-size=\"11\" fill=\"%s\" text-anchor=\"%s\">%d</text>",
+                    x, AXIS + 24, Svg.DIM, Svg.tickAnchor(i, ticks), tick);
         }
         for (Candidate candidate : rest) {
             svg.format("  <circle cx=\"%d\" cy=\"%d\" r=\"6\" fill=\"%s\" fill-opacity=\"0.55\"/>",
@@ -99,25 +108,27 @@ final class ScoreGapDiagram {
         svg.format("  <text x=\"%d\" y=\"%d\" font-size=\"12\" fill=\"%s\" text-anchor=\"middle\">%.2f</text>",
                 hiX, AXIS + 64, Svg.GREEN, best);
         svg.line("");
-        svg.format("  <text x=\"240\" y=\"%d\" font-size=\"13\" fill=\"%s\">the same nine keys, magnified %d times</text>",
-                ZAXIS - 42, Svg.DIM, magnification);
-        svg.format("  <line x1=\"240\" y1=\"%d\" x2=\"720\" y2=\"%d\" stroke=\"%s\" stroke-width=\"1.5\"/>",
-                ZAXIS, ZAXIS, Svg.DIM);
-        for (int tick = -1830; tick <= -1827; tick++) {
+        svg.format("  <text x=\"%d\" y=\"%d\" font-size=\"13\" fill=\"%s\">the same nine keys, magnified %d times</text>",
+                Z0, ZAXIS - 42, Svg.DIM, magnification);
+        svg.format("  <line x1=\"%d\" y1=\"%d\" x2=\"%d\" y2=\"%d\" stroke=\"%s\" stroke-width=\"1.5\"/>",
+                Z0, ZAXIS, Z1, ZAXIS, Svg.DIM);
+        int zooms = 1 + (-1827 - -1830);
+        for (int i = 0; i < zooms; i++) {
+            int tick = -1830 + i;
             int x = zx(tick);
             svg.format("  <line x1=\"%d\" y1=\"%d\" x2=\"%d\" y2=\"%d\" stroke=\"%s\" stroke-width=\"1\"/>",
                     x, ZAXIS, x, ZAXIS + 7, Svg.DIM);
-            svg.format("  <text x=\"%d\" y=\"%d\" font-size=\"11\" fill=\"%s\" text-anchor=\"middle\">%d</text>",
-                    x, ZAXIS + 24, Svg.DIM, tick);
+            svg.format("  <text x=\"%d\" y=\"%d\" font-size=\"11\" fill=\"%s\" text-anchor=\"%s\">%d</text>",
+                    x, ZAXIS + 24, Svg.DIM, Svg.tickAnchor(i, zooms), tick);
         }
         for (Candidate candidate : rest) {
             svg.format("  <circle cx=\"%d\" cy=\"%d\" r=\"6\" fill=\"%s\" fill-opacity=\"0.55\"/>",
                     zx(candidate.score()), ZAXIS, Svg.DIM);
         }
-        svg.format("  <text x=\"96\" y=\"%d\" font-size=\"12\" fill=\"%s\">%.2f log-units</text>", ZAXIS - 12, Svg.DIM, spread);
-        svg.format("  <text x=\"96\" y=\"%d\" font-size=\"12\" fill=\"%s\">from end to end,</text>", ZAXIS + 4, Svg.DIM);
-        svg.format("  <text x=\"96\" y=\"%d\" font-size=\"12\" fill=\"%s\">and no English</text>", ZAXIS + 20, Svg.DIM);
-        svg.format("  <text x=\"96\" y=\"%d\" font-size=\"12\" fill=\"%s\">in any of them</text>", ZAXIS + 36, Svg.DIM);
+        svg.format("  <text x=\"%d\" y=\"%d\" font-size=\"12\" fill=\"%s\">%.2f log-units</text>", Svg.LEFT, ZAXIS - 12, Svg.DIM, spread);
+        svg.format("  <text x=\"%d\" y=\"%d\" font-size=\"12\" fill=\"%s\">from end to end,</text>", Svg.LEFT, ZAXIS + 4, Svg.DIM);
+        svg.format("  <text x=\"%d\" y=\"%d\" font-size=\"12\" fill=\"%s\">and no English</text>", Svg.LEFT, ZAXIS + 20, Svg.DIM);
+        svg.format("  <text x=\"%d\" y=\"%d\" font-size=\"12\" fill=\"%s\">in any of them</text>", Svg.LEFT, ZAXIS + 36, Svg.DIM);
         svg.line("</svg>");
         return svg.toString();
     }

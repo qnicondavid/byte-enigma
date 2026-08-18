@@ -23,8 +23,16 @@ import java.util.List;
  */
 final class ScoreDistributionDiagram {
 
-    private static final int AX0 = 96;
-    private static final int AX1 = 800;
+    /** Far enough right that the widest power-of-ten label starts on the figure's left edge. */
+    private static final int AX0 = 46;
+
+    private static final int AX1 = Svg.RIGHT;
+
+    /** Where a power-of-ten label ends, eight units clear of the grid. */
+    private static final int AXIS_LABEL = AX0 - 8;
+
+    /** The last line sits {@link Svg#BOTTOM} above the edge, and nothing is drawn below it. */
+    private static final int CANVAS = 602 + Svg.BOTTOM;
 
     private static final double TOP_LO = -1862.0;
     private static final double TOP_HI = -1610.0;
@@ -93,7 +101,8 @@ final class ScoreDistributionDiagram {
         }
 
         Svg svg = new Svg();
-        svg.line("<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 880 620\" width=\"880\" height=\"620\"");
+        svg.format("<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 %d %d\" width=\"%d\" height=\"%d\"",
+                Svg.WIDTH, CANVAS, Svg.WIDTH, CANVAS);
         svg.format("     font-family=\"%s\" role=\"img\"", Svg.FONT);
         svg.line("     aria-labelledby=\"hist-title hist-desc\">");
         svg.line("  <title id=\"hist-title\">What all 4,294,967,296 keys scored</title>");
@@ -103,8 +112,8 @@ final class ScoreDistributionDiagram {
         svg.line("    4,249,795,476 keys, 98.95 percent of the space, share one bin at the floor, twenty-four bins");
         svg.line("    above it are empty, and the rest thins from millions a bin down to one.</desc>");
         svg.line("");
-        svg.format("  <text x=\"96\" y=\"36\" font-size=\"15\" fill=\"%s\">Every key in the space, counted into bins of 0.1 log-units.</text>", Svg.GREY);
-        svg.format("  <text x=\"96\" y=\"58\" font-size=\"13\" fill=\"%s\">Height is how many keys scored that much. The scale is logarithmic: each line up is a hundredfold.</text>", Svg.DIM);
+        svg.format("  <text x=\"%d\" y=\"%d\" font-size=\"15\" fill=\"%s\">Every key in the space, counted into bins of 0.1 log-units.</text>", Svg.LEFT, Svg.FIRST_BASELINE, Svg.GREY);
+        svg.format("  <text x=\"%d\" y=\"%d\" font-size=\"13\" fill=\"%s\">Height is how many keys scored that much. The scale is logarithmic: each line up is a hundredfold.</text>", Svg.LEFT, Svg.SECOND_BASELINE, Svg.DIM);
         svg.line("");
         grid(svg, TOP_BASE, true);
         for (Bin bin : noise) {
@@ -114,12 +123,14 @@ final class ScoreDistributionDiagram {
         svg.format("  <line x1=\"%d\" y1=\"300\" x2=\"%d\" y2=\"%d\" stroke=\"%s\" stroke-width=\"3\"/>",
                 ax(key.edge()), ax(key.edge()), ay(key.count()) - 6, Svg.GREEN);
         svg.format("  <circle cx=\"%d\" cy=\"%d\" r=\"6\" fill=\"%s\"/>", ax(key.edge()), 300, Svg.GREEN);
-        svg.format("  <line x1=\"96\" y1=\"300\" x2=\"808\" y2=\"300\" stroke=\"%s\" stroke-width=\"1.5\"/>", Svg.DIM);
-        for (int tick = -1850; tick <= -1610; tick += 40) {
+        svg.format("  <line x1=\"%d\" y1=\"300\" x2=\"%d\" y2=\"300\" stroke=\"%s\" stroke-width=\"1.5\"/>", AX0, AX1, Svg.DIM);
+        int ticks = 1 + (-1610 - -1850) / 40;
+        for (int i = 0; i < ticks; i++) {
+            int tick = -1850 + i * 40;
             svg.format("  <line x1=\"%d\" y1=\"300\" x2=\"%d\" y2=\"307\" stroke=\"%s\" stroke-width=\"1\"/>",
                     ax(tick), ax(tick), Svg.DIM);
-            svg.format("  <text x=\"%d\" y=\"322\" font-size=\"11\" fill=\"%s\" text-anchor=\"middle\">%d</text>",
-                    ax(tick), Svg.DIM, tick);
+            svg.format("  <text x=\"%d\" y=\"322\" font-size=\"11\" fill=\"%s\" text-anchor=\"%s\">%d</text>",
+                    ax(tick), Svg.DIM, Svg.tickAnchor(i, ticks), tick);
         }
         int gapLeft = ax(topNoise);
         int gapRight = ax(key.edge());
@@ -127,30 +138,32 @@ final class ScoreDistributionDiagram {
                 gapLeft, gapLeft, gapRight, gapRight, Svg.AMBER);
         svg.format("  <text x=\"%d\" y=\"84\" font-size=\"15\" fill=\"%s\" text-anchor=\"middle\">%.2f log-units, and not one key in them</text>",
                 Svg.px((gapLeft + gapRight) / 2.0), Svg.AMBER, margin);
-        svg.format("  <text x=\"%d\" y=\"346\" font-size=\"12\" fill=\"%s\" text-anchor=\"middle\">the key</text>",
+        svg.format("  <text x=\"%d\" y=\"284\" font-size=\"12\" fill=\"%s\" text-anchor=\"middle\">the key</text>",
                 gapRight, Svg.GREEN);
         svg.line("");
-        svg.format("  <text x=\"96\" y=\"356\" font-size=\"14\" fill=\"%s\">The left-hand pile, magnified.</text>", Svg.GREY);
+        svg.format("  <text x=\"%d\" y=\"356\" font-size=\"14\" fill=\"%s\">The left-hand pile, magnified.</text>", Svg.LEFT, Svg.GREY);
         grid(svg, ZOOM_BASE, false);
         for (Bin bin : noise) {
             svg.format("  <line x1=\"%d\" y1=\"512\" x2=\"%d\" y2=\"%d\" stroke=\"%s\" stroke-width=\"2.4\" stroke-opacity=\"0.85\"/>",
                     bx(bin.edge()), bx(bin.edge()), by(bin.count()),
                     bin.edge() == floor.edge() ? Svg.AMBER : Svg.DIM);
         }
-        svg.format("  <line x1=\"96\" y1=\"512\" x2=\"808\" y2=\"512\" stroke=\"%s\" stroke-width=\"1.5\"/>", Svg.DIM);
-        for (int tick = -1852; tick <= -1827; tick += 5) {
+        svg.format("  <line x1=\"%d\" y1=\"512\" x2=\"%d\" y2=\"512\" stroke=\"%s\" stroke-width=\"1.5\"/>", AX0, AX1, Svg.DIM);
+        int zooms = 1 + (-1827 - -1852) / 5;
+        for (int i = 0; i < zooms; i++) {
+            int tick = -1852 + i * 5;
             svg.format("  <line x1=\"%d\" y1=\"512\" x2=\"%d\" y2=\"519\" stroke=\"%s\" stroke-width=\"1\"/>",
                     bx(tick), bx(tick), Svg.DIM);
-            svg.format("  <text x=\"%d\" y=\"534\" font-size=\"11\" fill=\"%s\" text-anchor=\"middle\">%d</text>",
-                    bx(tick), Svg.DIM, tick);
+            svg.format("  <text x=\"%d\" y=\"534\" font-size=\"11\" fill=\"%s\" text-anchor=\"%s\">%d</text>",
+                    bx(tick), Svg.DIM, Svg.tickAnchor(i, zooms), tick);
         }
         svg.format("  <text x=\"%d\" y=\"396\" font-size=\"12\" fill=\"%s\">%,d keys, %.2f%% of the space,</text>",
                 bx(floor.edge()) + 16, Svg.AMBER, floor.count(), 100.0 * floor.count() / total);
         svg.format("  <text x=\"%d\" y=\"412\" font-size=\"12\" fill=\"%s\">all landing on exactly the same score</text>",
                 bx(floor.edge()) + 16, Svg.AMBER);
-        svg.format("  <text x=\"96\" y=\"566\" font-size=\"12\" fill=\"%s\">A candidate whose decryption holds no run of four letters is charged the floor on every window, so it</text>", Svg.DIM);
-        svg.format("  <text x=\"96\" y=\"584\" font-size=\"12\" fill=\"%s\">lands on the same number as all the others. The twenty-four bins directly above it are empty, because</text>", Svg.DIM);
-        svg.format("  <text x=\"96\" y=\"602\" font-size=\"12\" fill=\"%s\">recognising a single quadgram is worth about 2.5 log-units and there is no smaller step to take.</text>", Svg.DIM);
+        svg.format("  <text x=\"%d\" y=\"566\" font-size=\"12\" fill=\"%s\">A candidate whose decryption holds no run of four letters is charged the floor on every window, so it</text>", Svg.LEFT, Svg.DIM);
+        svg.format("  <text x=\"%d\" y=\"584\" font-size=\"12\" fill=\"%s\">lands on the same number as all the others. The twenty-four bins directly above it are empty, because</text>", Svg.LEFT, Svg.DIM);
+        svg.format("  <text x=\"%d\" y=\"602\" font-size=\"12\" fill=\"%s\">recognising a single quadgram is worth about 2.5 log-units and there is no smaller step to take.</text>", Svg.LEFT, Svg.DIM);
         svg.line("</svg>");
         return svg.toString();
     }
@@ -158,10 +171,10 @@ final class ScoreDistributionDiagram {
     private static void grid(Svg svg, int base, boolean top) {
         for (int power = 0; power <= 10; power += 2) {
             int y = power == 0 ? base : (top ? ay(Math.pow(10, power)) : by(Math.pow(10, power)));
-            svg.format("  <line x1=\"96\" y1=\"%d\" x2=\"800\" y2=\"%d\" stroke=\"%s\" stroke-width=\"1\" stroke-opacity=\"0.25\"/>",
-                    y, y, Svg.DIM);
-            svg.format("  <text x=\"88\" y=\"%d\" font-size=\"10\" fill=\"%s\" text-anchor=\"end\">%s</text>",
-                    y + 4, Svg.DIM, power == 0 ? "1" : "10^" + power);
+            svg.format("  <line x1=\"%d\" y1=\"%d\" x2=\"%d\" y2=\"%d\" stroke=\"%s\" stroke-width=\"1\" stroke-opacity=\"0.25\"/>",
+                    AX0, y, AX1, y, Svg.DIM);
+            svg.format("  <text x=\"%d\" y=\"%d\" font-size=\"10\" fill=\"%s\" text-anchor=\"end\">%s</text>",
+                    AXIS_LABEL, y + 4, Svg.DIM, power == 0 ? "1" : "10^" + power);
         }
     }
 }

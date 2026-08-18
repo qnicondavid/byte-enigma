@@ -20,13 +20,26 @@ final class AttackScalingDiagram {
 
     private static final int[] SIZES = {80, 160, 234, 1024};
 
-    private static final int X0 = 110;
-    private static final int X1 = 760;
-    private static final int SPAN = 1100;
+    /** Far enough right that the widest number on the vertical axis starts on the left edge. */
+    private static final int X0 = 31;
+
+    /** Far enough left that the longest series label ends on the right edge. */
+    private static final int X1 = 750;
+
+    private static final int SPAN = 1024;
+
+    /** Where a number on the vertical axis ends, ten units clear of the plot. */
+    private static final int AXIS_LABEL = X0 - 10;
+
+    /** Where a series label starts, fourteen units clear of the point it names. */
+    private static final int SERIES_LABEL = X1 + 14;
 
     private static final int BASE = 400;
     private static final int TOP = 100;
     private static final double CEILING = 11.0;
+
+    /** The last line sits {@link Svg#BOTTOM} above the edge, and nothing is drawn below it. */
+    private static final int CANVAS = 456 + Svg.BOTTOM;
 
     private AttackScalingDiagram() {
     }
@@ -51,7 +64,8 @@ final class AttackScalingDiagram {
         }
 
         Svg svg = new Svg();
-        svg.line("<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 880 470\" width=\"880\" height=\"470\"");
+        svg.format("<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 %d %d\" width=\"%d\" height=\"%d\"",
+                Svg.WIDTH, CANVAS, Svg.WIDTH, CANVAS);
         svg.format("     font-family=\"%s\" role=\"img\"", Svg.FONT);
         svg.line("     aria-labelledby=\"scale-title scale-desc\">");
         svg.line("  <title id=\"scale-title\">What a longer message costs each attack</title>");
@@ -62,15 +76,15 @@ final class AttackScalingDiagram {
         svg.format("    gap between the two widens from %.1f percent to %.0f percent.</desc>",
                 gap(crib[0], language[0]), gap(crib[SIZES.length - 1], language[SIZES.length - 1]));
         svg.line("");
-        svg.format("  <text x=\"96\" y=\"36\" font-size=\"15\" fill=\"%s\">Both attacks pay the key schedule. Only one of them reads the message.</text>", Svg.GREY);
-        svg.format("  <text x=\"96\" y=\"58\" font-size=\"13\" fill=\"%s\">Microseconds a candidate, three rotors, against message length in bytes.</text>", Svg.DIM);
+        svg.format("  <text x=\"%d\" y=\"%d\" font-size=\"15\" fill=\"%s\">Both attacks pay the key schedule. Only one of them reads the message.</text>", Svg.LEFT, Svg.FIRST_BASELINE, Svg.GREY);
+        svg.format("  <text x=\"%d\" y=\"%d\" font-size=\"13\" fill=\"%s\">Microseconds a candidate, three rotors, against message length in bytes.</text>", Svg.LEFT, Svg.SECOND_BASELINE, Svg.DIM);
         svg.line("");
 
         for (int level = 0; level <= 10; level += 2) {
             svg.format("  <line x1=\"%d\" y1=\"%d\" x2=\"%d\" y2=\"%d\" stroke=\"%s\" stroke-width=\"1\" stroke-opacity=\"0.25\"/>",
                     X0, y(level), X1, y(level), Svg.DIM);
             svg.format("  <text x=\"%d\" y=\"%d\" font-size=\"11\" fill=\"%s\" text-anchor=\"end\">%d</text>",
-                    X0 - 10, y(level) + 4, Svg.DIM, level);
+                    AXIS_LABEL, y(level) + 4, Svg.DIM, level);
         }
         svg.line("");
 
@@ -96,11 +110,11 @@ final class AttackScalingDiagram {
 
         svg.format("  <line x1=\"%d\" y1=\"%d\" x2=\"%d\" y2=\"%d\" stroke=\"%s\" stroke-width=\"1.5\"/>",
                 X0, BASE, X1, BASE, Svg.DIM);
-        for (int size : SIZES) {
+        for (int i = 0; i < SIZES.length; i++) {
             svg.format("  <line x1=\"%d\" y1=\"%d\" x2=\"%d\" y2=\"%d\" stroke=\"%s\" stroke-width=\"1\"/>",
-                    x(size), BASE, x(size), BASE + 6, Svg.DIM);
-            svg.format("  <text x=\"%d\" y=\"%d\" font-size=\"11\" fill=\"%s\" text-anchor=\"middle\">%d</text>",
-                    x(size), BASE + 21, Svg.DIM, size);
+                    x(SIZES[i]), BASE, x(SIZES[i]), BASE + 6, Svg.DIM);
+            svg.format("  <text x=\"%d\" y=\"%d\" font-size=\"11\" fill=\"%s\" text-anchor=\"%s\">%d</text>",
+                    x(SIZES[i]), BASE + 21, Svg.DIM, Svg.tickAnchor(i, SIZES.length), SIZES[i]);
         }
         svg.line("");
 
@@ -115,13 +129,13 @@ final class AttackScalingDiagram {
         svg.line("");
 
         svg.format("  <text x=\"%d\" y=\"%d\" font-size=\"12\" fill=\"%s\">ciphertext only</text>",
-                x(SIZES[last]) + 14, y(language[last]) + 4, Svg.AMBER);
+                SERIES_LABEL, y(language[last]) + 4, Svg.AMBER);
         svg.format("  <text x=\"%d\" y=\"%d\" font-size=\"12\" fill=\"%s\">with a crib</text>",
-                x(SIZES[last]) + 14, y(crib[last]) - 6, Svg.GREEN);
+                SERIES_LABEL, y(crib[last]) - 6, Svg.GREEN);
         svg.format("  <text x=\"%d\" y=\"%d\" font-size=\"12\" fill=\"%s\">rekey only</text>",
-                x(SIZES[last]) + 14, y(schedule[last]) + 16, Svg.DIM);
+                SERIES_LABEL, y(schedule[last]) + 16, Svg.DIM);
         svg.line("");
-        svg.format("  <text x=\"96\" y=\"456\" font-size=\"12\" fill=\"%s\">Drawn from docs/benchmarks.json. The dashed line is the key schedule, which neither attack can skip.</text>", Svg.DIM);
+        svg.format("  <text x=\"%d\" y=\"%d\" font-size=\"12\" fill=\"%s\">Drawn from docs/benchmarks.json. The dashed line is the key schedule, which neither attack can skip.</text>", Svg.LEFT, CANVAS - Svg.BOTTOM, Svg.DIM);
         svg.line("</svg>");
         return svg.toString();
     }

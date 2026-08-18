@@ -23,6 +23,7 @@ public final class Diagrams {
     /** Every figure this module owns, by the path it is written to. */
     public static Map<String, String> renderAll(Path root) throws IOException {
         Map<String, String> figures = new LinkedHashMap<>();
+        figures.put("docs/signal-path.svg", SignalPathDiagram.render());
         figures.put("docs/score-gap.svg", ScoreGapDiagram.render(root.resolve("docs/keyspace-sweep.state")));
         figures.put("docs/key-reuse.svg", KeyReuseDiagram.render());
         figures.put("docs/score-distribution.svg", ScoreDistributionDiagram.render(

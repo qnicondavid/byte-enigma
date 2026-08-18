@@ -28,6 +28,49 @@ final class Svg {
 
     static final String FONT = "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace";
 
+    /**
+     * How wide every figure is.
+     *
+     * <p>A page scales a figure to the width of its text column, so two figures of different widths
+     * would render their type at different sizes on the same page. Keeping one width keeps one type
+     * size across all of them.
+     */
+    static final int WIDTH = 880;
+
+    /**
+     * The left and right edge of the ink.
+     *
+     * <p>Markdown puts a figure flush with the text column, so whatever margin a figure draws inside
+     * itself is a step away from the prose above and below it. Eight units is a hair over half a
+     * character: enough that a stroke does not touch the edge, small enough that a reader reads the
+     * figure as part of the same column.
+     */
+    static final int LEFT = 8;
+
+    static final int RIGHT = WIDTH - LEFT;
+
+    /** The baseline of a figure's first line, so the space above one never varies. */
+    static final int FIRST_BASELINE = 26;
+
+    /** The second line of a caption, sixteen units under the first. */
+    static final int SECOND_BASELINE = FIRST_BASELINE + 22;
+
+    /**
+     * How far the last baseline sits above the bottom edge.
+     *
+     * <p>Enough for the descenders of p, y and g, which one figure used to cut off because its last
+     * line sat two units from the bottom.
+     */
+    static final int BOTTOM = 14;
+
+    /** Where a tick label is anchored, so the first and last on an axis stay inside the ink. */
+    static String tickAnchor(int index, int count) {
+        if (index == 0) {
+            return "start";
+        }
+        return index == count - 1 ? "end" : "middle";
+    }
+
     private final StringBuilder out = new StringBuilder();
 
     /** Rounds half up to a whole pixel, which keeps two implementations of a diagram agreeing. */

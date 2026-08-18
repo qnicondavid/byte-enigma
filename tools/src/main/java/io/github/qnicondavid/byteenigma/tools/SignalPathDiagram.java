@@ -43,6 +43,15 @@ final class SignalPathDiagram {
 
     private static final int REFLECTOR_WIDTH = 120;
 
+    /**
+     * How far a stroked box sits inside the edge it lines up with.
+     *
+     * <p>A stroke straddles the line it is drawn on, so a box whose border sits exactly on the edge
+     * of the figure loses the outer half of that border to the edge. Two units puts the whole of a
+     * two and a half unit border inside, at a cost of under a quarter of a percent of the width.
+     */
+    private static final int BORDER_INSET = 2;
+
     private static final int RULE = BACK_TOP + ROW_HEIGHT + 44;
 
     private static final int CAPTION = RULE + 30;
@@ -66,7 +75,7 @@ final class SignalPathDiagram {
             left[i] = x;
             x += widths[i] + gap;
         }
-        left[widths.length - 1] = Svg.RIGHT - REFLECTOR_WIDTH;
+        left[widths.length - 1] = Svg.RIGHT - REFLECTOR_WIDTH - BORDER_INSET;
         return left;
     }
 

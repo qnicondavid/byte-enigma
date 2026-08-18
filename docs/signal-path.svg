@@ -18,63 +18,63 @@
     </marker>
   </defs>
 
-  <text x="8" y="50" fill="#7d8590" font-size="13">in</text>
-  <path d="M 40 44 L 96 44" fill="none" stroke="#3b82c4" stroke-width="2" marker-end="url(#arrow-fwd)"/>
+  <text x="0" y="50" fill="#7d8590" font-size="13">in</text>
+  <path d="M 32 44 L 96 44" fill="none" stroke="#3b82c4" stroke-width="2" marker-end="url(#arrow-fwd)"/>
   <rect x="96" y="16" width="96" height="56" rx="6" fill="none" stroke="#2f9e57" stroke-width="2"/>
   <text x="144" y="41" fill="#7d8590" font-size="14" font-weight="600" text-anchor="middle">plugboard</text>
   <text x="144" y="59" fill="#8b949e" font-size="12" text-anchor="middle">128 pairs</text>
-  <path d="M 192 44 L 239 44" fill="none" stroke="#3b82c4" stroke-width="2" marker-end="url(#arrow-fwd)"/>
-  <rect x="239" y="16" width="124" height="56" rx="6" fill="none" stroke="#3b82c4" stroke-width="2"/>
-  <text x="301" y="41" fill="#7d8590" font-size="14" font-weight="600" text-anchor="middle">rotor 0</text>
-  <text x="301" y="59" fill="#8b949e" font-size="11" text-anchor="middle">steps every byte</text>
-  <path d="M 363 44 L 410 44" fill="none" stroke="#3b82c4" stroke-width="2" marker-end="url(#arrow-fwd)"/>
-  <rect x="410" y="16" width="124" height="56" rx="6" fill="none" stroke="#3b82c4" stroke-width="2"/>
-  <text x="472" y="41" fill="#7d8590" font-size="14" font-weight="600" text-anchor="middle">rotor 1</text>
-  <text x="472" y="59" fill="#8b949e" font-size="11" text-anchor="middle">on turnover</text>
-  <path d="M 534 44 L 581 44" fill="none" stroke="#3b82c4" stroke-width="2" marker-end="url(#arrow-fwd)"/>
-  <rect x="581" y="16" width="124" height="56" rx="6" fill="none" stroke="#3b82c4" stroke-width="2"/>
-  <text x="643" y="41" fill="#7d8590" font-size="14" font-weight="600" text-anchor="middle">rotor 2</text>
-  <text x="643" y="59" fill="#8b949e" font-size="11" text-anchor="middle">on turnover</text>
-  <path d="M 705 44 L 752 44" fill="none" stroke="#3b82c4" stroke-width="2" marker-end="url(#arrow-fwd)"/>
+  <path d="M 192 44 L 241 44" fill="none" stroke="#3b82c4" stroke-width="2" marker-end="url(#arrow-fwd)"/>
+  <rect x="241" y="16" width="124" height="56" rx="6" fill="none" stroke="#3b82c4" stroke-width="2"/>
+  <text x="303" y="41" fill="#7d8590" font-size="14" font-weight="600" text-anchor="middle">rotor 0</text>
+  <text x="303" y="59" fill="#8b949e" font-size="11" text-anchor="middle">steps every byte</text>
+  <path d="M 365 44 L 414 44" fill="none" stroke="#3b82c4" stroke-width="2" marker-end="url(#arrow-fwd)"/>
+  <rect x="414" y="16" width="124" height="56" rx="6" fill="none" stroke="#3b82c4" stroke-width="2"/>
+  <text x="476" y="41" fill="#7d8590" font-size="14" font-weight="600" text-anchor="middle">rotor 1</text>
+  <text x="476" y="59" fill="#8b949e" font-size="11" text-anchor="middle">on turnover</text>
+  <path d="M 538 44 L 587 44" fill="none" stroke="#3b82c4" stroke-width="2" marker-end="url(#arrow-fwd)"/>
+  <rect x="587" y="16" width="124" height="56" rx="6" fill="none" stroke="#3b82c4" stroke-width="2"/>
+  <text x="649" y="41" fill="#7d8590" font-size="14" font-weight="600" text-anchor="middle">rotor 2</text>
+  <text x="649" y="59" fill="#8b949e" font-size="11" text-anchor="middle">on turnover</text>
+  <path d="M 711 44 L 758 44" fill="none" stroke="#3b82c4" stroke-width="2" marker-end="url(#arrow-fwd)"/>
 
-  <rect x="752" y="16" width="120" height="140" rx="6" fill="none" stroke="#bf8700" stroke-width="2.5"/>
-  <text x="812" y="74" fill="#7d8590" font-size="14" font-weight="600" text-anchor="middle">reflector</text>
-  <text x="812" y="95" fill="#8b949e" font-size="12" text-anchor="middle">128 pairs,</text>
-  <text x="812" y="112" fill="#8b949e" font-size="12" text-anchor="middle">no fixed point</text>
+  <rect x="758" y="16" width="120" height="140" rx="6" fill="none" stroke="#bf8700" stroke-width="2.5"/>
+  <text x="818" y="74" fill="#7d8590" font-size="14" font-weight="600" text-anchor="middle">reflector</text>
+  <text x="818" y="95" fill="#8b949e" font-size="12" text-anchor="middle">128 pairs,</text>
+  <text x="818" y="112" fill="#8b949e" font-size="12" text-anchor="middle">no fixed point</text>
 
-  <path d="M 752 128 L 705 128" fill="none" stroke="#8b5cd6" stroke-width="2" marker-end="url(#arrow-bwd)"/>
-  <rect x="581" y="100" width="124" height="56" rx="6" fill="none" stroke="#8b5cd6" stroke-width="2"/>
-  <text x="643" y="125" fill="#7d8590" font-size="14" font-weight="600" text-anchor="middle">rotor 2</text>
-  <text x="643" y="143" fill="#8b949e" font-size="11" text-anchor="middle">inverse</text>
-  <path d="M 581 128 L 534 128" fill="none" stroke="#8b5cd6" stroke-width="2" marker-end="url(#arrow-bwd)"/>
-  <rect x="410" y="100" width="124" height="56" rx="6" fill="none" stroke="#8b5cd6" stroke-width="2"/>
-  <text x="472" y="125" fill="#7d8590" font-size="14" font-weight="600" text-anchor="middle">rotor 1</text>
-  <text x="472" y="143" fill="#8b949e" font-size="11" text-anchor="middle">inverse</text>
-  <path d="M 410 128 L 363 128" fill="none" stroke="#8b5cd6" stroke-width="2" marker-end="url(#arrow-bwd)"/>
-  <rect x="239" y="100" width="124" height="56" rx="6" fill="none" stroke="#8b5cd6" stroke-width="2"/>
-  <text x="301" y="125" fill="#7d8590" font-size="14" font-weight="600" text-anchor="middle">rotor 0</text>
-  <text x="301" y="143" fill="#8b949e" font-size="11" text-anchor="middle">inverse</text>
-  <path d="M 239 128 L 192 128" fill="none" stroke="#8b5cd6" stroke-width="2" marker-end="url(#arrow-bwd)"/>
+  <path d="M 758 128 L 711 128" fill="none" stroke="#8b5cd6" stroke-width="2" marker-end="url(#arrow-bwd)"/>
+  <rect x="587" y="100" width="124" height="56" rx="6" fill="none" stroke="#8b5cd6" stroke-width="2"/>
+  <text x="649" y="125" fill="#7d8590" font-size="14" font-weight="600" text-anchor="middle">rotor 2</text>
+  <text x="649" y="143" fill="#8b949e" font-size="11" text-anchor="middle">inverse</text>
+  <path d="M 587 128 L 538 128" fill="none" stroke="#8b5cd6" stroke-width="2" marker-end="url(#arrow-bwd)"/>
+  <rect x="414" y="100" width="124" height="56" rx="6" fill="none" stroke="#8b5cd6" stroke-width="2"/>
+  <text x="476" y="125" fill="#7d8590" font-size="14" font-weight="600" text-anchor="middle">rotor 1</text>
+  <text x="476" y="143" fill="#8b949e" font-size="11" text-anchor="middle">inverse</text>
+  <path d="M 414 128 L 365 128" fill="none" stroke="#8b5cd6" stroke-width="2" marker-end="url(#arrow-bwd)"/>
+  <rect x="241" y="100" width="124" height="56" rx="6" fill="none" stroke="#8b5cd6" stroke-width="2"/>
+  <text x="303" y="125" fill="#7d8590" font-size="14" font-weight="600" text-anchor="middle">rotor 0</text>
+  <text x="303" y="143" fill="#8b949e" font-size="11" text-anchor="middle">inverse</text>
+  <path d="M 241 128 L 192 128" fill="none" stroke="#8b5cd6" stroke-width="2" marker-end="url(#arrow-bwd)"/>
   <rect x="96" y="100" width="96" height="56" rx="6" fill="none" stroke="#2f9e57" stroke-width="2"/>
   <text x="144" y="132" fill="#7d8590" font-size="14" font-weight="600" text-anchor="middle">plugboard</text>
-  <path d="M 96 128 L 44 128" fill="none" stroke="#8b5cd6" stroke-width="2" marker-end="url(#arrow-bwd)"/>
-  <text x="8" y="134" fill="#7d8590" font-size="13">out</text>
+  <path d="M 96 128 L 36 128" fill="none" stroke="#8b5cd6" stroke-width="2" marker-end="url(#arrow-bwd)"/>
+  <text x="0" y="134" fill="#7d8590" font-size="13">out</text>
 
-  <line x1="8" y1="200" x2="872" y2="200" stroke="#8b949e" stroke-width="1" opacity="0.4"/>
+  <line x1="0" y1="200" x2="880" y2="200" stroke="#8b949e" stroke-width="1" opacity="0.4"/>
 
-  <text x="8" y="230" fill="#8b949e" font-size="12.5" font-style="italic">Everything above the line is derived from one 32-bit key.</text>
+  <text x="0" y="230" fill="#8b949e" font-size="12.5" font-style="italic">Everything above the line is derived from one 32-bit key.</text>
 
-  <text x="8" y="260" fill="#8b949e" font-size="12.5">
+  <text x="0" y="260" fill="#8b949e" font-size="12.5">
     <tspan fill="#2f9e57" font-weight="600">plugboard</tspan><tspan> and </tspan><tspan fill="#bf8700" font-weight="600">reflector</tspan><tspan>: fixed-point-free involutions of the 256 byte values, so</tspan>
   </text>
-  <text x="8" y="278" fill="#8b949e" font-size="12.5">applying either one twice is the identity.</text>
+  <text x="0" y="278" fill="#8b949e" font-size="12.5">applying either one twice is the identity.</text>
 
-  <text x="8" y="306" fill="#8b949e" font-size="12.5">
+  <text x="0" y="306" fill="#8b949e" font-size="12.5">
     <tspan fill="#3b82c4" font-weight="600">rotors</tspan><tspan> forward and </tspan><tspan fill="#8b5cd6" font-weight="600">rotors</tspan><tspan> back: the same key-derived permutations, applied in</tspan>
   </text>
-  <text x="8" y="324" fill="#8b949e" font-size="12.5">reverse order and inverted, with an offset that advances as the message is consumed.</text>
+  <text x="0" y="324" fill="#8b949e" font-size="12.5">reverse order and inverted, with an offset that advances as the message is consumed.</text>
 
-  <text x="8" y="356" fill="#8b949e" font-size="12.5">The reflector has no fixed point and every rotor pass is a conjugation of it, so the whole machine</text>
-  <text x="8" y="374" fill="#8b949e" font-size="12.5">inherits the property: no byte ever comes out as the byte that went in. That is what makes one</text>
-  <text x="8" y="392" fill="#8b949e" font-size="12.5">setting both encrypt and decrypt, and what lets an attacker rule out crib positions for free.</text>
+  <text x="0" y="356" fill="#8b949e" font-size="12.5">The reflector has no fixed point and every rotor pass is a conjugation of it, so the whole machine</text>
+  <text x="0" y="374" fill="#8b949e" font-size="12.5">inherits the property: no byte ever comes out as the byte that went in. That is what makes one</text>
+  <text x="0" y="392" fill="#8b949e" font-size="12.5">setting both encrypt and decrypt, and what lets an attacker rule out crib positions for free.</text>
 </svg>

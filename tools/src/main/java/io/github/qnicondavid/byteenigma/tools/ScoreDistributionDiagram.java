@@ -24,7 +24,7 @@ import java.util.List;
 final class ScoreDistributionDiagram {
 
     /** Far enough right that the widest power-of-ten label starts on the figure's left edge. */
-    private static final int AX0 = 46;
+    private static final int AX0 = 38;
 
     private static final int AX1 = Svg.RIGHT;
 

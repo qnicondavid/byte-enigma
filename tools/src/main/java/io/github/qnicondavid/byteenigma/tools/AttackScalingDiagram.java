@@ -21,10 +21,10 @@ final class AttackScalingDiagram {
     private static final int[] SIZES = {80, 160, 234, 1024};
 
     /** Far enough right that the widest number on the vertical axis starts on the left edge. */
-    private static final int X0 = 31;
+    private static final int X0 = 24;
 
     /** Far enough left that the longest series label ends on the right edge. */
-    private static final int X1 = 750;
+    private static final int X1 = 758;
 
     private static final int SPAN = 1024;
 

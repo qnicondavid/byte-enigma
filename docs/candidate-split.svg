@@ -8,59 +8,59 @@
     and the rest of the shuffling at 0.967. Only the short end differs: 1.441 microseconds to read the
     whole message and score it, against 0.111 to read the crib window and compare it.</desc>
 
-  <text x="8" y="26" font-size="15" fill="#8b949e">One key tried against a 234-byte message, three rotors.</text>
-  <text x="8" y="48" font-size="13" fill="#7d8590">Both attacks build the same machine first. What they do after it is the short end on the right.</text>
+  <text x="0" y="26" font-size="15" fill="#8b949e">One key tried against a 234-byte message, three rotors.</text>
+  <text x="0" y="48" font-size="13" fill="#7d8590">Both attacks build the same machine first. What they do after it is the short end on the right.</text>
 
-  <text x="402" y="80" font-size="13" fill="#8b949e" text-anchor="middle">the key schedule, 3.632 us</text>
-  <text x="402" y="96" font-size="12" fill="#7d8590" text-anchor="middle">71.6% of the ciphertext-only bar, 97.0% of the crib one</text>
-  <path d="M 140 110 L 140 102 L 664 102 L 664 110" fill="none" stroke="#7d8590" stroke-width="1.4"/>
+  <text x="397" y="80" font-size="13" fill="#8b949e" text-anchor="middle">the key schedule, 3.632 us</text>
+  <text x="397" y="96" font-size="12" fill="#7d8590" text-anchor="middle">71.6% of the ciphertext-only bar, 97.0% of the crib one</text>
+  <path d="M 127 110 L 127 102 L 666 102 L 666 110" fill="none" stroke="#7d8590" stroke-width="1.4"/>
 
-  <rect x="140" y="118" width="144" height="44" fill="#7d8590" fill-opacity="0.38"/>
-  <rect x="287" y="118" width="238" height="44" fill="#bf8700" fill-opacity="0.92"/>
-  <rect x="528" y="118" width="136" height="44" fill="#7d8590" fill-opacity="0.66"/>
-  <rect x="667" y="118" width="205" height="44" fill="#2f9e57" fill-opacity="0.85"/>
-  <rect x="140" y="192" width="144" height="44" fill="#7d8590" fill-opacity="0.38"/>
-  <rect x="287" y="192" width="238" height="44" fill="#bf8700" fill-opacity="0.92"/>
-  <rect x="528" y="192" width="136" height="44" fill="#7d8590" fill-opacity="0.66"/>
-  <rect x="667" y="192" width="13" height="44" fill="#2f9e57" fill-opacity="0.85"/>
-  <text x="130" y="145" font-size="13" fill="#8b949e" text-anchor="end">ciphertext only</text>
-  <text x="130" y="219" font-size="13" fill="#8b949e" text-anchor="end">with a crib</text>
-  <text x="212" y="180" font-size="12" fill="#7d8590" text-anchor="middle">19.7%</text>
-  <text x="405" y="180" font-size="12" fill="#bf8700" text-anchor="middle">32.8%</text>
+  <rect x="127" y="118" width="148" height="44" fill="#7d8590" fill-opacity="0.38"/>
+  <rect x="278" y="118" width="245" height="44" fill="#bf8700" fill-opacity="0.92"/>
+  <rect x="526" y="118" width="140" height="44" fill="#7d8590" fill-opacity="0.66"/>
+  <rect x="669" y="118" width="211" height="44" fill="#2f9e57" fill-opacity="0.85"/>
+  <rect x="127" y="192" width="148" height="44" fill="#7d8590" fill-opacity="0.38"/>
+  <rect x="278" y="192" width="245" height="44" fill="#bf8700" fill-opacity="0.92"/>
+  <rect x="526" y="192" width="140" height="44" fill="#7d8590" fill-opacity="0.66"/>
+  <rect x="669" y="192" width="14" height="44" fill="#2f9e57" fill-opacity="0.85"/>
+  <text x="117" y="145" font-size="13" fill="#8b949e" text-anchor="end">ciphertext only</text>
+  <text x="117" y="219" font-size="13" fill="#8b949e" text-anchor="end">with a crib</text>
+  <text x="201" y="180" font-size="12" fill="#7d8590" text-anchor="middle">19.7%</text>
+  <text x="399" y="180" font-size="12" fill="#bf8700" text-anchor="middle">32.8%</text>
   <text x="595" y="180" font-size="12" fill="#7d8590" text-anchor="middle">19.1%</text>
-  <text x="768" y="180" font-size="12" fill="#7d8590" text-anchor="middle">28.4%</text>
+  <text x="773" y="180" font-size="12" fill="#7d8590" text-anchor="middle">28.4%</text>
 
-  <line x1="140" y1="254" x2="872" y2="254" stroke="#7d8590" stroke-width="1.5"/>
-  <line x1="140" y1="254" x2="140" y2="260" stroke="#7d8590" stroke-width="1"/>
-  <text x="140" y="275" font-size="11" fill="#7d8590" text-anchor="start">0</text>
-  <line x1="284" y1="254" x2="284" y2="260" stroke="#7d8590" stroke-width="1"/>
-  <text x="284" y="275" font-size="11" fill="#7d8590" text-anchor="middle">1</text>
-  <line x1="429" y1="254" x2="429" y2="260" stroke="#7d8590" stroke-width="1"/>
-  <text x="429" y="275" font-size="11" fill="#7d8590" text-anchor="middle">2</text>
-  <line x1="573" y1="254" x2="573" y2="260" stroke="#7d8590" stroke-width="1"/>
-  <text x="573" y="275" font-size="11" fill="#7d8590" text-anchor="middle">3</text>
-  <line x1="717" y1="254" x2="717" y2="260" stroke="#7d8590" stroke-width="1"/>
-  <text x="717" y="275" font-size="11" fill="#7d8590" text-anchor="middle">4</text>
-  <line x1="861" y1="254" x2="861" y2="260" stroke="#7d8590" stroke-width="1"/>
-  <text x="861" y="275" font-size="11" fill="#7d8590" text-anchor="end">5</text>
-  <text x="140" y="296" font-size="12" fill="#7d8590">microseconds</text>
+  <line x1="127" y1="254" x2="880" y2="254" stroke="#7d8590" stroke-width="1.5"/>
+  <line x1="127" y1="254" x2="127" y2="260" stroke="#7d8590" stroke-width="1"/>
+  <text x="127" y="275" font-size="11" fill="#7d8590" text-anchor="start">0</text>
+  <line x1="275" y1="254" x2="275" y2="260" stroke="#7d8590" stroke-width="1"/>
+  <text x="275" y="275" font-size="11" fill="#7d8590" text-anchor="middle">1</text>
+  <line x1="424" y1="254" x2="424" y2="260" stroke="#7d8590" stroke-width="1"/>
+  <text x="424" y="275" font-size="11" fill="#7d8590" text-anchor="middle">2</text>
+  <line x1="572" y1="254" x2="572" y2="260" stroke="#7d8590" stroke-width="1"/>
+  <text x="572" y="275" font-size="11" fill="#7d8590" text-anchor="middle">3</text>
+  <line x1="721" y1="254" x2="721" y2="260" stroke="#7d8590" stroke-width="1"/>
+  <text x="721" y="275" font-size="11" fill="#7d8590" text-anchor="middle">4</text>
+  <line x1="869" y1="254" x2="869" y2="260" stroke="#7d8590" stroke-width="1"/>
+  <text x="869" y="275" font-size="11" fill="#7d8590" text-anchor="end">5</text>
+  <text x="127" y="296" font-size="12" fill="#7d8590">microseconds</text>
 
-  <rect x="140" y="320" width="12" height="12" fill="#7d8590" fill-opacity="0.38"/>
-  <text x="162" y="330" font-size="12" fill="#7d8590">the generator, 1,275 draws at a power-of-two bound</text>
-  <text x="872" y="330" font-size="12" fill="#7d8590" text-anchor="end">1.000 us, 19.7%</text>
-  <rect x="140" y="342" width="12" height="12" fill="#bf8700" fill-opacity="0.92"/>
-  <text x="162" y="352" font-size="12" fill="#7d8590">the rejection loop, on the bounds a shuffle really uses</text>
-  <text x="872" y="352" font-size="12" fill="#7d8590" text-anchor="end">1.665 us, 32.8%</text>
-  <rect x="140" y="364" width="12" height="12" fill="#7d8590" fill-opacity="0.66"/>
-  <text x="162" y="374" font-size="12" fill="#7d8590">the rest of the shuffling</text>
-  <text x="872" y="374" font-size="12" fill="#7d8590" text-anchor="end">0.967 us, 19.1%</text>
-  <rect x="140" y="386" width="12" height="12" fill="#2f9e57" fill-opacity="0.85"/>
-  <text x="162" y="396" font-size="12" fill="#7d8590">the whole message, decrypted and scored</text>
-  <text x="872" y="396" font-size="12" fill="#7d8590" text-anchor="end">1.441 us, 28.4%</text>
-  <rect x="140" y="408" width="12" height="12" fill="#2f9e57" fill-opacity="0.85"/>
-  <text x="162" y="418" font-size="12" fill="#7d8590">the crib window, decrypted and compared</text>
-  <text x="872" y="418" font-size="12" fill="#7d8590" text-anchor="end">0.111 us, 3.0%</text>
+  <rect x="127" y="320" width="12" height="12" fill="#7d8590" fill-opacity="0.38"/>
+  <text x="149" y="330" font-size="12" fill="#7d8590">the generator, 1,275 draws at a power-of-two bound</text>
+  <text x="880" y="330" font-size="12" fill="#7d8590" text-anchor="end">1.000 us, 19.7%</text>
+  <rect x="127" y="342" width="12" height="12" fill="#bf8700" fill-opacity="0.92"/>
+  <text x="149" y="352" font-size="12" fill="#7d8590">the rejection loop, on the bounds a shuffle really uses</text>
+  <text x="880" y="352" font-size="12" fill="#7d8590" text-anchor="end">1.665 us, 32.8%</text>
+  <rect x="127" y="364" width="12" height="12" fill="#7d8590" fill-opacity="0.66"/>
+  <text x="149" y="374" font-size="12" fill="#7d8590">the rest of the shuffling</text>
+  <text x="880" y="374" font-size="12" fill="#7d8590" text-anchor="end">0.967 us, 19.1%</text>
+  <rect x="127" y="386" width="12" height="12" fill="#2f9e57" fill-opacity="0.85"/>
+  <text x="149" y="396" font-size="12" fill="#7d8590">the whole message, decrypted and scored</text>
+  <text x="880" y="396" font-size="12" fill="#7d8590" text-anchor="end">1.441 us, 28.4%</text>
+  <rect x="127" y="408" width="12" height="12" fill="#2f9e57" fill-opacity="0.85"/>
+  <text x="149" y="418" font-size="12" fill="#7d8590">the crib window, decrypted and compared</text>
+  <text x="880" y="418" font-size="12" fill="#7d8590" text-anchor="end">0.111 us, 3.0%</text>
 
-  <text x="8" y="444" font-size="12" fill="#7d8590">Drawn from docs/benchmarks.json. Green is the only part that depends on the message.</text>
-  <text x="8" y="462" font-size="12" fill="#7d8590">Each share is of the bar its own segment sits in, so the crib window is measured against the shorter one.</text>
+  <text x="0" y="444" font-size="12" fill="#7d8590">Drawn from docs/benchmarks.json. Green is the only part that depends on the message.</text>
+  <text x="0" y="462" font-size="12" fill="#7d8590">Each share is of the bar its own segment sits in, so the crib window is measured against the shorter one.</text>
 </svg>

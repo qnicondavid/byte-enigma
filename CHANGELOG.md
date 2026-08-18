@@ -11,9 +11,12 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
   it to fit, so a margin drawn inside a figure is a margin between that figure and the paragraph
   above it, and one that grows and shrinks with the window rather than staying put. The six were
   drawing six different ones: left edges from 16 units to 96 out of 880, right edges from 5.7% of the
-  width to 13.6%, and the space above the first mark from 5.8% of the height to 18.1%. All six now
-  start their ink eight units in, stop eight units short, print their first line on one baseline and
-  leave the same room under their last.
+  width to 13.6%, and the space above the first mark from 5.8% of the height to 18.1%. There is no
+  margin now. A figure's first letter starts on the same line down the page as the first letter of
+  the paragraph above it, its last one ends where that paragraph wraps, all six print their first
+  line on one baseline, and all six leave the same room under their last. A stroked box that lines up
+  with an edge sits two units inside it, because a stroke straddles the line it is drawn on and would
+  otherwise lose its outer half to the edge.
 - `docs/signal-path.svg` is generated rather than written by hand, which is how its margins came to
   differ from the other five to begin with. Its boxes are sized to the longest label they carry:
   `steps every byte` measured 106 units inside an 88-unit box and hung out of both sides of it. Its

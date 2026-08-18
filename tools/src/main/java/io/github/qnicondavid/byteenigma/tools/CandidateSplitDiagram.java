@@ -19,7 +19,7 @@ import java.nio.file.Path;
 final class CandidateSplitDiagram {
 
     /** Far enough right that the longer of the two row labels starts on the figure's left edge. */
-    private static final int X0 = 140;
+    private static final int X0 = 127;
 
     private static final int X1 = Svg.RIGHT;
 

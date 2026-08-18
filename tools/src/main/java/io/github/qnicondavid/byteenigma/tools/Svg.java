@@ -41,13 +41,17 @@ final class Svg {
      * The left and right edge of the ink.
      *
      * <p>Markdown puts a figure flush with the text column, so whatever margin a figure draws inside
-     * itself is a step away from the prose above and below it. Eight units is a hair over half a
-     * character: enough that a stroke does not touch the edge, small enough that a reader reads the
-     * figure as part of the same column.
+     * itself is a step away from the prose above and below it. There is no margin: a figure's first
+     * letter starts on the same line down the page as the first letter of the paragraph above it,
+     * and its last one ends where that paragraph wraps.
+     *
+     * <p>A tick mark that lands exactly on an edge loses the outer half of its stroke to the edge.
+     * That is half a unit on a one-unit line, at the extreme of a figure, next to an axis that ends
+     * there anyway, and it is the price of the alignment.
      */
-    static final int LEFT = 8;
+    static final int LEFT = 0;
 
-    static final int RIGHT = WIDTH - LEFT;
+    static final int RIGHT = WIDTH;
 
     /** The baseline of a figure's first line, so the space above one never varies. */
     static final int FIRST_BASELINE = 26;

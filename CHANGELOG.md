@@ -3,6 +3,18 @@
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versions follow
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+- `jitpack.yml` installed a second JDK before building. JitPack's `openjdk17` image already carries
+  one, and unpacking another filled the build container: the first build this file ever ran, of
+  v1.2.0 on 19 August 2026, stopped with "tar: jdk-17.0.10+7/lib/libjaas.so: Cannot write: No space
+  left on device", Maven then failed on the half-installed JDK, and the only artifact published was
+  the parent pom. So the coordinates in `docs/using-the-search.md` resolved to nothing and the badge
+  in `README.md` had no version to show, which is why it rendered as a broken image. The
+  `before_install` step is gone.
+
 ## [1.2.1] - 2026-08-19
 
 No new capability, and nothing in the cipher. The six figures were given one set of margins so that a

@@ -1,9 +1,10 @@
+# The build runs on JitPack's own openjdk17 image, which is what the jdk key below asks for.
+# This file used to run "sdk install java 17.0.10-tem" in a before_install step as well. The first
+# build it ever ran, on 19 August 2026, died unpacking that second JDK: "tar: jdk-17.0.10+7/lib/
+# libjaas.so: Cannot write: No space left on device". Maven then failed against a half-installed
+# JDK and only the parent pom was published. One JDK is enough.
 jdk:
   - openjdk17
-
-before_install:
-  - sdk install java 17.0.10-tem
-  - sdk use java 17.0.10-tem
 
 install:
   - mvn -B -ntp -DskipTests install

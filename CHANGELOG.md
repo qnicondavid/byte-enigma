@@ -67,6 +67,19 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 - `docs/keyspace-sweep.md` said the key sits "about 97%" of the way up the range. The range is
   `[-2147483648, 2147483648)` and the key is 2083951437, so it sits (2083951437 + 2^31) / 2^32 =
   98.5% of the way up. 97.04% is 2083951437 / 2^31, the fraction of the positive half alone.
+- The provenance table in `data/corpus/MANIFEST.md` gave the year out of each file's own bracketed
+  title line as the year of first publication. On four of the eight they are different years: both
+  Austens went on sale in the December before the year printed on them, and the Bryant and the
+  Burgess files are later printings of books first published in 1907 and 1916. The table carries
+  both columns now and says where the outside dates come from. The claim the table exists to support
+  does not move: the latest of the sixteen years in it is 1920.
+- The last-quarter rates in `docs/keyspace-sweep.md` were printed to seven figures and derived from
+  three. They were 1,073,741,824 keys over an elapsed time read off the minute column, which the log
+  rounds to a tenth. Taken instead from the `elapsedNanos` in the checkpoints and the rate the 75.00%
+  progress line prints, they are 1,690,087 and 1,133,490 rather than 1,688,273 and 1,132,639. The
+  page quotes them to three figures, marks the row derived and shows the arithmetic. The conclusion
+  is unmoved: the ratio goes from 1.4906 to 1.4910, both 49%. On the same two pairs, a whole-run
+  cumulative average sits 1.5 to 3.9% above the sustained rate rather than the 2 to 4% claimed.
 - The `mvn verify` line in `README.md` and `CONTRIBUTING.md` carries a count and a time measured in
   the same run. The count had been re-counted to 148 while the 5.9 seconds beside it was measured
   when the suite held 145. It reads 151 tests in 5.8 seconds, both from one run on the desktop the

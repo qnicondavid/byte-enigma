@@ -104,10 +104,12 @@ machine, an hour apart, against the same ciphertext.
 
 **Neither headline figure is the rate the machine sustains.** Both runs start fast and settle: the
 crib run's first 67 million keys went at 2,448,423 keys/sec and its last quarter of the range at
-1,688,273, and the ciphertext-only run started at 1,559,100 and settled at 1,132,639. The machine
-opens between 1.38 and 1.45 times faster than it holds, so a cumulative average taken over a whole
-run is 2 to 4% above the sustained rate, and more than that for a short run. The progress lines
-below make it visible: the rate column falls monotonically for an hour.
+about 1,690,000, and the ciphertext-only run started at 1,559,100 and settled at about 1,133,000.
+The two opening rates are measured. The two sustained ones are derived, and the next section shows
+from what. The machine opens between 1.38 and 1.45 times faster than it holds, so a cumulative
+average taken over a whole run is 1.5 to 3.9% above the sustained rate, and more than that for a
+short run. The progress lines below make it visible: the rate column falls monotonically for an
+hour.
 
 This is the same disease as the 587,309 keys/sec an earlier run reported, only milder. That run was
 resumed across two thread counts and its checkpoint blended the elapsed time of both, which made the
@@ -124,11 +126,20 @@ threads for the ciphertext-only attack. The same attack on the same machine meas
 |---|---|---|---|
 | one candidate, JMH, 234 bytes | 3.743 us | 5.073 us | 35.5% |
 | whole keyspace, as reported | 1,755,375 keys/sec | 1,150,873 keys/sec | 52.5% |
-| whole keyspace, last quarter | 1,688,273 keys/sec | 1,132,639 keys/sec | 49.1% |
+| whole keyspace, last quarter, derived | about 1,690,000 keys/sec | about 1,133,000 keys/sec | 49.1% |
 
 The crib attack is worth about half again, not an order of magnitude, and this page used to say 40%
 on the strength of two partial runs. The number to quote is the last row: two complete sweeps, one
 machine, one afternoon.
+
+That last row is derived, and this is the arithmetic. Neither run reports a rate over a quarter of
+the range, so it is 1,073,741,824 keys over the time between the 75% progress line and the end. For
+the crib run that is 2,446.751 seconds, the `elapsedNanos` in `crib-sweep.state`, less the 1,811.434
+its 75.00% line implies from 3,221,225,472 keys at 1,778,274 keys/sec; for the ciphertext-only run,
+3,731.923 less 2,784.634 the same way. That gives 1,690,087 and 1,133,490. Three figures rather than
+seven, because taking the elapsed times from the minute column instead, which the log rounds to a
+tenth, gives 1,688,273 and 1,132,639: the ratio moves from 1.4910 to 1.4906 and everything past the
+third digit is a property of the rounding rather than of the machine. Neither route moves the 49%.
 
 The interesting part is that the sweep advantage is larger than the evaluator advantage. At the
 level of one candidate the crib route saves 36%; over four billion of them it saves 49%. The extra

@@ -3,7 +3,22 @@
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versions follow
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.2.1] - 2026-08-19
+
+No new capability, and nothing in the cipher. The six figures were given one set of margins so that a
+figure's ink starts where the paragraph above it starts, and then everything these pages claim was
+checked against the thing it describes. Six of those claims did not survive it. The one that mattered
+is that the Base64 this documentation prints could not be fed to the command this documentation tells
+you to run: it is wrapped over four lines and the decoder rejected line separators, so the first
+thing a sceptical reader tries came back as an error and exit 2. The rest were a test named in a
+comment that did not exist, a retracted description still sitting in a javadoc, two rates that
+disagreed with the log printed below them, a percentage taken over half the range rather than all of
+it, a control said to reproduce on six methods of a class that has seven, and two provenance dates
+that were the edition transcribed rather than the first publication. Separately, every number the
+command line prints is formatted the same way on every machine now.
+
+`cipher` and `breaker` are byte for byte what 1.2.0 shipped, and so are the eight corpus texts and
+the quadgram table generated from them. The golden vector did not move.
 
 ### Changed
 
@@ -359,6 +374,7 @@ recording anyway, because both changed the golden vector and both were deliberat
   `String.hashCode` collides on structure rather than chance, so `"Aa"` and `"BB"` produced identical
   ciphertext.
 
+[1.2.1]: https://github.com/qnicondavid/byte-enigma/releases/tag/v1.2.1
 [1.2.0]: https://github.com/qnicondavid/byte-enigma/releases/tag/v1.2.0
 [1.1.0]: https://github.com/qnicondavid/byte-enigma/releases/tag/v1.1.0
 [1.0.0]: https://github.com/qnicondavid/byte-enigma/releases/tag/v1.0.0

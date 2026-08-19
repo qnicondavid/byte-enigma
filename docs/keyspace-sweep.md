@@ -16,7 +16,7 @@ those measurements come from.
 | Range | `[-2147483648, 2147483648)`, all 4,294,967,296 keys |
 | Attack | Ciphertext only. No crib, no hint about where in the range to look. |
 
-The key sits about 97% of the way up from the bottom of the range on purpose. The sweep starts at
+The key sits 98.5% of the way up from the bottom of the range on purpose. The sweep starts at
 `Integer.MIN_VALUE` and counts up, so a key placed near the top is only found by a run that really
 did go nearly all the way.
 
@@ -103,8 +103,8 @@ machine, an hour apart, against the same ciphertext.
 | Ciphertext only, quadgrams | 4,294,967,296 | 16 | 62.2 min | 1,150,873 keys/sec |
 
 **Neither headline figure is the rate the machine sustains.** Both runs start fast and settle: the
-crib run's first 67 million keys went at 2,449,228 keys/sec and its last quarter of the range at
-1,688,273, and the ciphertext-only run started at 1,560,671 and settled at 1,132,639. The machine
+crib run's first 67 million keys went at 2,448,423 keys/sec and its last quarter of the range at
+1,688,273, and the ciphertext-only run started at 1,559,100 and settled at 1,132,639. The machine
 opens between 1.38 and 1.45 times faster than it holds, so a cumulative average taken over a whole
 run is 2 to 4% above the sustained rate, and more than that for a short run. The progress lines
 below make it visible: the rate column falls monotonically for an hour.

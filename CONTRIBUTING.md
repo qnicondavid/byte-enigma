@@ -46,7 +46,7 @@ instead; please keep that distinction.
 ## Building
 
 ```
-mvn verify                   # 148 tests, 5.9 s on one desktop
+mvn verify                   # 151 tests, 5.8 s on one desktop
 mvn -Pdist package           # core/target/byte-enigma.jar
 mvn -pl benchmarks -am package && java -jar benchmarks/target/benchmarks.jar
 ```

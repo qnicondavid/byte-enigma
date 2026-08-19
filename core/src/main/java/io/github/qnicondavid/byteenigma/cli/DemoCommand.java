@@ -19,8 +19,8 @@ import java.util.concurrent.ThreadLocalRandom;
  * <p>The search runs over a window rather than the whole keyspace so that the demo finishes
  * while you are still looking at it. The window is the only thing that is scaled down: the same
  * {@code SeedSweep} handed the full range sweeps the full range, which is what
- * {@code docs/keyspace-sweep.md} records: 4,294,967,296 keys in 2.03 hours across two
- * machines, which projects to an hour and a half on sixteen threads alone.
+ * {@code docs/keyspace-sweep.md} records: 4,294,967,296 keys in 62.2 minutes on sixteen
+ * threads of one machine, in one uninterrupted run.
  */
 final class DemoCommand {
 

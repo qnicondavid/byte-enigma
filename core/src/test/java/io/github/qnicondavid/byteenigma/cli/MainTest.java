@@ -100,6 +100,45 @@ class MainTest {
     }
 
     @Test
+    void openingAcceptsBase64ThatHasBeenWrappedAcrossLines() throws Exception {
+        Path plain = Files.createTempFile("byte-enigma", ".txt");
+        Path sealed = Files.createTempFile("byte-enigma", ".b64");
+        try {
+            Files.writeString(plain, "attack at dawn", StandardCharsets.UTF_8);
+            assertEquals(0, invoke("seal", "--password", "hunter2",
+                    "--in", plain.toString(), "--out", sealed.toString()).status());
+
+            String oneLine = Files.readString(sealed, StandardCharsets.UTF_8).strip();
+            StringBuilder wrapped = new StringBuilder();
+            for (int at = 0; at < oneLine.length(); at += 20) {
+                wrapped.append(oneLine, at, Math.min(at + 20, oneLine.length())).append('\n');
+            }
+            Files.writeString(sealed, wrapped.toString(), StandardCharsets.UTF_8);
+
+            Run opened = invoke("open", "--password", "hunter2", "--in", sealed.toString());
+            assertEquals(0, opened.status(), opened.err());
+            assertEquals("attack at dawn", opened.out());
+        } finally {
+            Files.deleteIfExists(plain);
+            Files.deleteIfExists(sealed);
+        }
+    }
+
+    @Test
+    void aFileOfProseIsStillNotBase64() throws Exception {
+        Path prose = Files.createTempFile("byte-enigma", ".txt");
+        try {
+            Files.writeString(prose, "this is not a ciphertext, it is a sentence.\n",
+                    StandardCharsets.UTF_8);
+            Run run = invoke("open", "--password", "hunter2", "--in", prose.toString());
+            assertEquals(2, run.status());
+            assertTrue(run.err().contains("not Base64"), run.err());
+        } finally {
+            Files.deleteIfExists(prose);
+        }
+    }
+
+    @Test
     void sealingTheSameMessageTwiceGivesDifferentCiphertext() throws Exception {
         Path plain = Files.createTempFile("byte-enigma", ".txt");
         try {

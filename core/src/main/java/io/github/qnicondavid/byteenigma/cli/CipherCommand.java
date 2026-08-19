@@ -86,7 +86,10 @@ final class CipherCommand {
         if (args.flag("binary")) {
             return readInput(args, stdin);
         }
-        String text = new String(readInput(args, stdin), StandardCharsets.UTF_8).trim();
+        // Whitespace comes out of the middle as well as the ends, so a wrapped file opens.
+        // See BreakCommand.readCiphertext for why this is not getMimeDecoder.
+        String text = new String(readInput(args, stdin), StandardCharsets.UTF_8)
+                .replaceAll("\\s", "");
         try {
             return Base64.getDecoder().decode(text);
         } catch (IllegalArgumentException notBase64) {

@@ -35,6 +35,43 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
   them drifts. `FigureInk` does the measuring: geometry exactly, strings from the advance width of a
   monospace character, which is why the check allows two units of slack on an edge a string defines.
 
+### Fixed
+
+- `break`, `offsets`, `open` and `raw` accept Base64 that has been wrapped across lines.
+  `docs/keyspace-sweep.md` prints its ciphertext wrapped at 92 characters and then tells the reader
+  to save it and pass it to `--in`, and the basic RFC 4648 decoder rejects line separators, so the
+  first thing that page invites anyone to do failed with "ciphertext is not Base64". Whitespace now
+  comes out of the string before it is decoded. `getMimeDecoder` would have taken the wrapped input
+  too and was not used, because it also discards every character outside the alphabet, which would
+  turn a file of prose into a short decode instead of an error. The suite now feeds `open` a wrapped
+  file and a file of prose; it had only ever fed it the single line `seal` writes.
+- The demo's javadoc still described the sweep as "4,294,967,296 keys in 2.03 hours across two
+  machines, which projects to an hour and a half on sixteen threads alone". That description was
+  retracted in 1.2.0 and corrected in the README and in both docs pages, and this comment was missed.
+  It reads 62.2 minutes on sixteen threads of one machine, in one uninterrupted run.
+- Two rates in `docs/keyspace-sweep.md` disagreed with the log printed further down the same page.
+  The prose said the crib run opened at 2,449,228 keys/sec and the ciphertext-only run at 1,560,671;
+  the log says 2,448,423 and 1,559,100. The prose figures were the key count divided by the elapsed
+  seconds the log prints, and the log rounds those to a tenth, so they were arithmetic from a rounded
+  number presented to the unit. The measured pair stands.
+- `README.md` said the crib route "is 49% faster than reading the English" next to the only two other
+  numbers in the sentence, which give 34.4% less wall clock or 52.5% more keys per second. 49% is the
+  right figure to quote and comes from a third pair, the rate each run settled at over its last
+  quarter. The sentence now says which pair it came from.
+- `SeedSweep` named `LeaderboardOrderingTest` as the test pinning that the leaderboard's hand-written
+  condition agrees with `Candidate.WEAKEST_FIRST`. No such test existed anywhere in the tree.
+  `CandidateTest.theLeaderboardsFastPathAgreesWithTheComparator` is that test, over 900 pairs
+  covering negative infinity, equal scores and both ends of the int range, and the comment names it.
+  `SECURITY.md` calls a test named in a comment that does not exist a real defect, so this one was
+  reported against its own rule.
+- `docs/keyspace-sweep.md` said the key sits "about 97%" of the way up the range. The range is
+  `[-2147483648, 2147483648)` and the key is 2083951437, so it sits (2083951437 + 2^31) / 2^32 =
+  98.5% of the way up. 97.04% is 2083951437 / 2^31, the fraction of the positive half alone.
+- The `mvn verify` line in `README.md` and `CONTRIBUTING.md` carries a count and a time measured in
+  the same run. The count had been re-counted to 148 while the 5.9 seconds beside it was measured
+  when the suite held 145. It reads 151 tests in 5.8 seconds, both from one run on the desktop the
+  rest of these figures come from.
+
 ## [1.2.0] - 2026-08-17
 
 The benchmarks were run. They had never been run: the suite compiled and sat in the reactor for

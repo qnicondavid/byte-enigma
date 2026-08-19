@@ -101,9 +101,10 @@ byte-enigma break --crib "ATTACK AT DAWN" --at 0 --in message.b64
 
 The first command lists the positions the no-fixed-point rule leaves standing, before any key is
 tried. The second sweeps one of them. Over the whole keyspace this route came back in 40.8 minutes
-with one key and nothing else, which is 49% faster than reading the English. Not an order of
-magnitude, because both spend most of their time rebuilding the key schedule and neither can avoid
-it. [keyspace-sweep.md](docs/keyspace-sweep.md) has both runs and [benchmarks.md](docs/benchmarks.md)
+with one key and nothing else. Measured on the rate each run settled at over its last quarter, that
+is 49% more keys per second than reading the English. Not an order of magnitude, because both spend
+most of their time rebuilding the key schedule and neither can avoid it.
+[keyspace-sweep.md](docs/keyspace-sweep.md) has both runs and [benchmarks.md](docs/benchmarks.md)
 has where the time inside one candidate goes.
 
 ## The leak that needs no key
@@ -203,7 +204,7 @@ Inside `core`:
 ## Building
 
 ```
-mvn verify                   # 148 tests, 5.9 s on one desktop
+mvn verify                   # 151 tests, 5.8 s on one desktop
 mvn -Pdist package           # builds core/target/byte-enigma.jar
 mvn -pl benchmarks -am package   # builds benchmarks/target/benchmarks.jar
 java -jar benchmarks/target/benchmarks.jar

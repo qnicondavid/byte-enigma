@@ -312,7 +312,8 @@ public final class SeedSweep<T> {
         /**
          * Called once per key, so the common case is spelled out rather than routed through a
          * chained comparator. The condition is exactly {@code WEAKEST_FIRST.compare(candidate,
-         * weakest) > 0}; {@code LeaderboardOrderingTest} pins that the two agree.
+         * weakest) > 0}; {@code CandidateTest.theLeaderboardsFastPathAgreesWithTheComparator}
+         * pins that the two agree.
          */
         private void offer(Candidate candidate) {
             if (heap.size() < capacity) {

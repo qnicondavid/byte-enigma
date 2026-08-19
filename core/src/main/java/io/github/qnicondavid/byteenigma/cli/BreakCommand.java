@@ -306,8 +306,12 @@ final class BreakCommand {
         if (args.flag("binary")) {
             return raw;
         }
+        // Whitespace comes out first: docs/keyspace-sweep.md prints its ciphertext wrapped and
+        // a mail client will wrap it again. getMimeDecoder would take that, but it silently drops
+        // every other character outside the alphabet too, so a file of prose would decode.
+        String text = new String(raw, StandardCharsets.UTF_8).replaceAll("\\s", "");
         try {
-            return Base64.getDecoder().decode(new String(raw, StandardCharsets.UTF_8).trim());
+            return Base64.getDecoder().decode(text);
         } catch (IllegalArgumentException notBase64) {
             throw new Arguments.UsageException("ciphertext is not Base64; pass --binary if it is raw bytes");
         }

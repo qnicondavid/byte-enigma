@@ -10,6 +10,7 @@ import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Locale;
 import org.junit.jupiter.api.Test;
 
 /** The command line answers for itself, and says so when it cannot. */
@@ -165,6 +166,44 @@ class MainTest {
             Run second = invoke("raw", "--binary", "--key", "99", "--in", cipher.toString());
             assertEquals("ATTACK AT DAWN", second.out());
         } finally {
+            Files.deleteIfExists(plain);
+            Files.deleteIfExists(cipher);
+        }
+    }
+
+    /**
+     * The command line prints the same numbers whatever the machine is set to. Under a
+     * comma-decimal locale an unqualified {@code printf} turns 2.8% into 2,8% and 314,762 into
+     * 314.762, and a reader could not compare their own run against the log in
+     * {@code docs/keyspace-sweep.md}. This runs one deterministic command twice and asks for the
+     * same bytes back. The default locale is restored afterwards, which is safe because nothing
+     * here configures surefire or JUnit to run tests in parallel.
+     */
+    @Test
+    void theOutputDoesNotMoveWithTheDefaultLocale() throws Exception {
+        Path plain = Files.createTempFile("byte-enigma", ".txt");
+        Path cipher = Files.createTempFile("byte-enigma", ".bin");
+        Locale original = Locale.getDefault();
+        try {
+            Files.writeString(plain, "ATTACK AT DAWN AND HOLD THE COAST UNTIL THE FLEET ARRIVES",
+                    StandardCharsets.UTF_8);
+            assertEquals(0, invoke("raw", "--binary", "--key", "99",
+                    "--in", plain.toString(), "--out", cipher.toString()).status());
+
+            String[] offsets = {"offsets", "--crib", "ATTACK AT DAWN", "--binary",
+                "--in", cipher.toString()};
+            Locale.setDefault(Locale.ROOT);
+            Run root = invoke(offsets);
+            Locale.setDefault(Locale.forLanguageTag("ro-RO"));
+            Run comma = invoke(offsets);
+
+            assertEquals(0, root.status(), root.err());
+            assertEquals(0, comma.status(), comma.err());
+            assertTrue(root.out().contains("eliminated:"), root.out());
+            assertEquals(root.out(), comma.out(),
+                    "the offsets report is not the same on a comma-decimal machine");
+        } finally {
+            Locale.setDefault(original);
             Files.deleteIfExists(plain);
             Files.deleteIfExists(cipher);
         }

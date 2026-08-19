@@ -91,10 +91,23 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
   itself". Two of the six are drawn from `docs/benchmarks.json` and one from
   `docs/score-histogram.tsv`. All three are committed, so the claim the sentence exists to make was
   true; the list beside it was not.
-- The `mvn verify` line in `README.md` and `CONTRIBUTING.md` carries a count and a time measured in
-  the same run. The count had been re-counted to 148 while the 5.9 seconds beside it was measured
-  when the suite held 145. It reads 151 tests in 5.8 seconds, both from one run on the desktop the
-  rest of these figures come from.
+- Every number the command line prints is formatted under `Locale.ROOT`. `Durations` and eighteen
+  `printf` calls in `BreakCommand` and `DemoCommand` took the machine's own locale, so on a
+  comma-decimal one the demo printed `5,9%` and `314.762 keys/sec` and `3,79 h` where this
+  documentation prints `5.9%`, `314,762 keys/sec` and `3.79 h`. A reader there could not line their
+  own run up against the log on `docs/keyspace-sweep.md`, and `314.762 keys/sec` reads as three
+  hundred and fourteen to everybody else. The two committed artifacts were never affected:
+  `ScoreHistogram.render` already passed `Locale.ROOT` and `SweepCheckpoint.save` appends through a
+  `StringBuilder`. `DurationsTest` covers all five branches of the duration format under a
+  comma-decimal locale, and `MainTest` runs `offsets` twice, once under each, and requires the same
+  bytes.
+- The `mvn verify` line in `README.md` and `CONTRIBUTING.md` gives a count and a range rather than a
+  count and a single time. The count had been re-counted to 148 while the 5.9 seconds beside it was
+  measured when the suite held 145. Re-measuring turned up the larger problem: four runs of that
+  command on the same desktop inside one hour came back at 10.9, 6.7, 5.8 and 4.2 seconds, the last
+  two both with everything already compiled, so a single figure there is a fact about what else the
+  machine was doing. It reads 153 tests in 4 to 6 seconds, both ends measured, and the count is the
+  half of it that reproduces exactly.
 
 ## [1.2.0] - 2026-08-17
 

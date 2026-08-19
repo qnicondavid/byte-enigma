@@ -18,6 +18,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
+import java.util.Locale;
 
 /** The {@code break} and {@code offsets} subcommands. */
 final class BreakCommand {
@@ -134,7 +135,7 @@ final class BreakCommand {
         if (checkpointPath != null) {
             stdout.println("checkpoint: " + checkpointPath
                     + (resumed == null ? "  (new)" : "  (resuming at " + cursor + ")"));
-            stdout.printf("resumed:    %,d keys already done, %.1f%% of the range%n",
+            stdout.printf(Locale.ROOT, "resumed:    %,d keys already done, %.1f%% of the range%n",
                     keysTried, 100.0 * (resumed == null ? 0.0 : resumed.fraction()));
         }
         if (budgetSeconds > 0L) {
@@ -174,7 +175,7 @@ final class BreakCommand {
             if (checkpointPath != null) {
                 new SweepCheckpoint(mode, digest, from, to, cursor, keysTried, elapsedNanos, best)
                         .save(checkpointPath);
-                stdout.printf("  %6.2f%%  %,15d keys  %,8.0f keys/sec  this run %s  total %s%n",
+                stdout.printf(Locale.ROOT, "  %6.2f%%  %,15d keys  %,8.0f keys/sec  this run %s  total %s%n",
                         100.0 * (cursor - from) / total, keysTried,
                         keysTried / (elapsedNanos / 1_000_000_000.0),
                         Durations.format(spentThisRun / 1_000_000_000.0),
@@ -189,20 +190,20 @@ final class BreakCommand {
 
         stdout.println();
         if (stoppedEarly) {
-            stdout.printf("stopped on budget at %,d of %,d keys (%.2f%%). Run the same command again%n",
+            stdout.printf(Locale.ROOT, "stopped on budget at %,d of %,d keys (%.2f%%). Run the same command again%n",
                     cursor - from, total, 100.0 * (cursor - from) / total);
             stdout.println("to carry on from here.");
             stdout.println();
         }
         if (histogram != null) {
             Files.writeString(histogramPath, histogram.render(), StandardCharsets.UTF_8);
-            stdout.printf("histogram:  %,d scores written to %s%n", histogram.counted(), histogramPath);
+            stdout.printf(Locale.ROOT, "histogram:  %,d scores written to %s%n", histogram.counted(), histogramPath);
             if (histogram.counted() > 0L) {
-                stdout.printf("            lowest %.2f, highest %.2f%n",
+                stdout.printf(Locale.ROOT, "            lowest %.2f, highest %.2f%n",
                         histogram.lowest(), histogram.highest());
             }
             if (histogram.under() > 0L || histogram.over() > 0L) {
-                stdout.printf("            %,d fell below %.0f and %,d above %.0f, so the bins were "
+                stdout.printf(Locale.ROOT, "            %,d fell below %.0f and %,d above %.0f, so the bins were "
                         + "chosen badly%n", histogram.under(), HISTOGRAM_LO, histogram.over(), HISTOGRAM_HI);
             }
             if (stoppedEarly) {
@@ -232,7 +233,7 @@ final class BreakCommand {
         stdout.println("crib:        " + crib.length + " bytes");
         stdout.println("positions:   " + positions);
         stdout.println("admissible:  " + admissible.size());
-        stdout.printf("eliminated:  %.1f%% before a single key was tried%n",
+        stdout.printf(Locale.ROOT, "eliminated:  %.1f%% before a single key was tried%n",
                 100.0 * CribMatcher.eliminationRate(ciphertext, crib));
         stdout.println();
         stdout.println("offsets: " + admissible);
@@ -250,7 +251,7 @@ final class BreakCommand {
         if (expectedFalseHits <= 0.01) {
             return;
         }
-        stdout.printf("warning: a %d-byte crib is expected to match about %.3g wrong keys over this%n",
+        stdout.printf(Locale.ROOT, "warning: a %d-byte crib is expected to match about %.3g wrong keys over this%n",
                 cribLength, expectedFalseHits);
         stdout.println("         range by chance. Every crib hit scores the same, so a wrong one can");
         stdout.println("         outrank the key. Use a longer crib, or --top " + Math.max(topN, 10)
@@ -261,12 +262,13 @@ final class BreakCommand {
     private static void report(PrintStream stdout, long keysTried, long elapsedNanos,
                               List<Candidate> best, int topN, boolean complete) {
         double seconds = elapsedNanos / 1_000_000_000.0;
-        stdout.println("keys tried:  " + String.format("%,d", keysTried) + (complete ? "  (whole range)" : ""));
-        stdout.printf("elapsed:     %s%n", Durations.format(seconds));
-        stdout.printf("rate:        %,.0f keys/sec (measured over the work actually done)%n",
+        stdout.println("keys tried:  " + String.format(Locale.ROOT, "%,d", keysTried)
+                + (complete ? "  (whole range)" : ""));
+        stdout.printf(Locale.ROOT, "elapsed:     %s%n", Durations.format(seconds));
+        stdout.printf(Locale.ROOT, "rate:        %,.0f keys/sec (measured over the work actually done)%n",
                 seconds > 0.0 ? keysTried / seconds : 0.0);
         if (!complete) {
-            stdout.printf("full 2^32:   %s at that rate%n",
+            stdout.printf(Locale.ROOT, "full 2^32:   %s at that rate%n",
                     Durations.format(seconds > 0.0 ? (1L << 32) / (keysTried / seconds) : Double.NaN));
         }
         stdout.println();
@@ -282,14 +284,14 @@ final class BreakCommand {
             stdout.println();
         }
         if (best.size() > 1) {
-            stdout.printf("margin:      %.2f between the first and the second%n%n",
+            stdout.printf(Locale.ROOT, "margin:      %.2f between the first and the second%n%n",
                     best.get(0).score() - best.get(1).score());
         }
 
         int shown = Math.min(topN, best.size());
         for (int i = 0; i < shown; i++) {
             Candidate candidate = best.get(i);
-            stdout.printf("#%d  key=%d  score=%.2f%n", i + 1, candidate.key(), candidate.score());
+            stdout.printf(Locale.ROOT, "#%d  key=%d  score=%.2f%n", i + 1, candidate.key(), candidate.score());
             stdout.println("    " + preview(candidate.plaintext()));
         }
     }
@@ -325,7 +327,7 @@ final class BreakCommand {
         public void report(long keysTried, long keysTotal, double keysPerSecond, double elapsedSeconds) {
             double fraction = keysTotal > 0 ? (double) keysTried / keysTotal : 0.0;
             double remaining = keysPerSecond > 0.0 ? (keysTotal - keysTried) / keysPerSecond : Double.NaN;
-            out.printf("  %5.1f%%  %,d keys  %,.0f keys/sec  elapsed %s  left %s%n",
+            out.printf(Locale.ROOT, "  %5.1f%%  %,d keys  %,.0f keys/sec  elapsed %s  left %s%n",
                     100.0 * fraction, keysTried, keysPerSecond,
                     Durations.format(elapsedSeconds), Durations.format(remaining));
         }

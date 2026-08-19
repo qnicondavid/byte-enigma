@@ -10,6 +10,7 @@ import io.github.qnicondavid.byteenigma.search.SweepResult;
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.Locale;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
@@ -112,7 +113,7 @@ final class DemoCommand {
         out.println("-----------------------------------");
         out.println("plaintext:  " + plaintext.length + " bytes of English");
         out.println("crib:       \"" + CRIB + "\" at offset " + cribOffset);
-        out.printf( "offsets:    %.1f%% of crib positions are ruled out for free, because no byte%n",
+        out.printf(Locale.ROOT, "offsets:    %.1f%% of crib positions are ruled out for free, because no byte%n",
                 100.0 * CribMatcher.eliminationRate(ciphertext, crib));
         out.println("            can ever encrypt to itself");
         out.println("window:     [" + windowStart + ", " + windowEnd + ")  " + WINDOW + " keys");
@@ -148,9 +149,9 @@ final class DemoCommand {
             out.println("    plaintext:  " + new String(top.plaintext(), StandardCharsets.UTF_8));
             out.println("    matches:    " + textMatches);
         }
-        out.printf("    elapsed:    %s for %,d keys%n",
+        out.printf(Locale.ROOT, "    elapsed:    %s for %,d keys%n",
                 Durations.format(result.elapsedSeconds()), result.keysTried());
-        out.printf("    rate:       %,.0f keys/sec, so 2^32 projects to %s%n",
+        out.printf(Locale.ROOT, "    rate:       %,.0f keys/sec, so 2^32 projects to %s%n",
                 result.keysPerSecond(), Durations.format(result.fullKeyspaceSeconds()));
         out.println();
         return keyMatches && textMatches;

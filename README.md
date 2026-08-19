@@ -204,7 +204,7 @@ Inside `core`:
 ## Building
 
 ```
-mvn verify                   # 151 tests, 5.8 s on one desktop
+mvn verify                   # 153 tests, 4 to 6 s on one desktop
 mvn -Pdist package           # builds core/target/byte-enigma.jar
 mvn -pl benchmarks -am package   # builds benchmarks/target/benchmarks.jar
 java -jar benchmarks/target/benchmarks.jar

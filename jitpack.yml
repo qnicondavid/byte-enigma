@@ -1,10 +1,11 @@
-# The build runs on JitPack's own openjdk17 image, which is what the jdk key below asks for.
-# This file used to run "sdk install java 17.0.10-tem" in a before_install step as well. The first
-# build it ever ran, on 19 August 2026, died unpacking that second JDK: "tar: jdk-17.0.10+7/lib/
-# libjaas.so: Cannot write: No space left on device". Maven then failed against a half-installed
-# JDK and only the parent pom was published. One JDK is enough.
+# Built with the wrapper, so the Maven that runs here is the one pinned in
+# .mvn/wrapper/maven-wrapper.properties rather than whatever the build image happens to carry.
+# JitPack's default image carries a Maven older than 3.6.3, and the first two builds this file ever
+# ran, of v1.2.0 and v1.2.1 on 19 August 2026, both died on the same line: "The plugin
+# org.apache.maven.plugins:maven-compiler-plugin:3.13.0 requires Maven version 3.6.3". Only the
+# parent pom was published either time.
 jdk:
   - openjdk17
 
 install:
-  - mvn -B -ntp -DskipTests install
+  - ./mvnw -B -ntp -DskipTests install

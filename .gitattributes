@@ -7,3 +7,9 @@
 # identically on every platform". Without this file that was true of what is committed and false
 # of what a Windows runner checks out.
 * text=auto eol=lf
+
+# The one exception, and the only file here checked out with CRLF on purpose. mvnw.cmd is a batch
+# file, and cmd.exe is the last interpreter that still cares: a label or a parenthesised block read
+# with LF endings does not always parse the way it reads. Declaring it here also stops git from
+# rewriting it on the way into the index, which is what makes "git add" fatal under core.safecrlf.
+mvnw.cmd text eol=crlf

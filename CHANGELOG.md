@@ -7,13 +7,28 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 ### Fixed
 
-- `jitpack.yml` installed a second JDK before building. JitPack's `openjdk17` image already carries
-  one, and unpacking another filled the build container: the first build this file ever ran, of
-  v1.2.0 on 19 August 2026, stopped with "tar: jdk-17.0.10+7/lib/libjaas.so: Cannot write: No space
-  left on device", Maven then failed on the half-installed JDK, and the only artifact published was
-  the parent pom. So the coordinates in `docs/using-the-search.md` resolved to nothing and the badge
-  in `README.md` had no version to show, which is why it rendered as a broken image. The
-  `before_install` step is gone.
+- The JitPack build never worked, and now does not depend on the build image's Maven. The first two
+  it ever ran, of v1.2.0 and v1.2.1 on 19 August 2026, both stopped at "The plugin
+  org.apache.maven.plugins:maven-compiler-plugin:3.13.0 requires Maven version 3.6.3": JitPack's
+  default image carries an older one. Both published the parent pom and nothing else, so the
+  coordinates in `docs/using-the-search.md` resolved to a pom with no jar behind it, and the badge in
+  `README.md` had no version to show, which is why it rendered as a broken image rather than as
+  anything red. A first look at the v1.2.0 log blamed the wrong line in it, "tar:
+  jdk-17.0.10+7/lib/libjaas.so: Cannot write: No space left on device", which came from a
+  `before_install` step that installed a second JDK on top of the one `jdk: openjdk17` already
+  brings. That step was redundant and is gone, but it was not the cause: the v1.2.1 log carries no
+  such line and failed identically.
+
+### Added
+
+- The Maven wrapper, pinned to 3.9.16, generated with `-Dtype=only-script` so no jar is committed
+  and `.gitignore`'s `*.jar` has nothing to swallow. `jitpack.yml` and both workflows run `./mvnw`,
+  so the Maven that builds a tag on JitPack, the one that runs the matrix on CI across Linux,
+  Windows, JDK 17 and JDK 21, and the one on the desktop these figures come from are one version.
+  `mvn verify` still works for anyone who has Maven; the wrapper is for the machines that do not.
+- `mvnw.cmd` is declared `text eol=crlf` in `.gitattributes`, the only file in this tree checked
+  out with CRLF on purpose. cmd.exe is the last interpreter that still cares, and declaring it is
+  also what stops `git add` from being fatal on it under `core.safecrlf`.
 
 ## [1.2.1] - 2026-08-19
 

@@ -53,6 +53,10 @@ mvn -pl benchmarks -am package && java -jar benchmarks/target/benchmarks.jar
 
 JDK 17 or newer. CI runs the tests on 17 and 21 and will not merge a red branch.
 
+`./mvnw` runs the same goals against the Maven pinned in `.mvn/wrapper/maven-wrapper.properties`,
+3.9.16, and is what CI and JitPack run. Use it if you do not have Maven, or if you want the
+version this was built with; `mvn` is fine otherwise.
+
 ## Style
 
 Follow what is there. Four spaces, no wildcard imports, no abbreviations in names. Javadoc on anything

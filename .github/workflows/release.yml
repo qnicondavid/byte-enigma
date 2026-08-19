@@ -30,10 +30,10 @@ jobs:
 
       # A tag that cannot pass its own tests is not a release.
       - name: Test
-        run: mvn -B -ntp verify
+        run: ./mvnw -B -ntp verify
 
       - name: Package
-        run: mvn -B -ntp -q -Pdist package -DskipTests
+        run: ./mvnw -B -ntp -q -Pdist package -DskipTests
 
       - name: Check the jar runs
         run: java -jar core/target/byte-enigma.jar --help > /dev/null

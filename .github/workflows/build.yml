@@ -39,15 +39,15 @@ jobs:
           cache: maven
 
       - name: Test
-        run: mvn -B -ntp verify
+        run: ./mvnw -B -ntp verify
 
       # The demo enciphers under a key it then throws away and recovers it twice. It exits
       # non-zero if either route fails, so this is a real end-to-end check and not a smoke test.
       - name: Run the demonstration
-        run: mvn -B -ntp -q -pl core exec:java@demo
+        run: ./mvnw -B -ntp -q -pl core exec:java@demo
 
       - name: Build the runnable jar
-        run: mvn -B -ntp -q -Pdist package -DskipTests
+        run: ./mvnw -B -ntp -q -Pdist package -DskipTests
 
       - name: Check the jar runs from a clean shell
         run: |

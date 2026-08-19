@@ -3,7 +3,16 @@
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versions follow
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.2.2] - 2026-08-19
+
+A build fix, and nothing else. No Java source changed since 1.2.1, so the jar attached here is the
+same code that one attached. What changed is that JitPack can build it at all. Its first two
+attempts, of v1.2.0 and v1.2.1, both stopped at "The plugin
+org.apache.maven.plugins:maven-compiler-plugin:3.13.0 requires Maven version 3.6.3" and published a
+pom with no jar behind it, so the coordinates below resolved to nothing and the badge on the README
+had no version to show. The build now runs the Maven wrapper, pinned to the same 3.9.16 that CI and
+this desktop use, and a snapshot of `main` built on JitPack in 35 seconds with
+`byte-enigma-main-b2694c26cf-1.jar` at the end of it.
 
 ### Fixed
 
@@ -401,6 +410,7 @@ recording anyway, because both changed the golden vector and both were deliberat
   `String.hashCode` collides on structure rather than chance, so `"Aa"` and `"BB"` produced identical
   ciphertext.
 
+[1.2.2]: https://github.com/qnicondavid/byte-enigma/releases/tag/v1.2.2
 [1.2.1]: https://github.com/qnicondavid/byte-enigma/releases/tag/v1.2.1
 [1.2.0]: https://github.com/qnicondavid/byte-enigma/releases/tag/v1.2.0
 [1.1.0]: https://github.com/qnicondavid/byte-enigma/releases/tag/v1.1.0

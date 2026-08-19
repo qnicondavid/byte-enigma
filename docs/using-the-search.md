@@ -10,7 +10,8 @@ walks four billion of them.
 ## Coordinates
 
 Available through [JitPack](https://jitpack.io/#qnicondavid/byte-enigma). No transitive dependencies:
-the library has none.
+the library has none. JitPack builds a version the first time somebody asks for it, so the first
+resolution of a tag nobody has used yet waits for that build; this one took 35 seconds.
 
 ```xml
 <repositories>
@@ -23,7 +24,7 @@ the library has none.
 <dependency>
   <groupId>com.github.qnicondavid.byte-enigma</groupId>
   <artifactId>byte-enigma</artifactId>
-  <version>v1.2.1</version>
+  <version>v1.2.2</version>
 </dependency>
 ```
 

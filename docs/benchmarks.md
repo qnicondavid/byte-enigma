@@ -35,8 +35,10 @@ percent between runs on this machine, and two of the things this page used to cl
 that.
 
 `CandidateBenchmark` at 160 bytes is a control: it rebuilds the message an earlier run used, byte for
-byte, and has to return the same numbers. It does, inside the error bars, on all six of its methods.
-Take the rest of the page as far as that makes you willing to.
+byte, and has to return the same numbers. It does, inside the error bars, on six of its seven
+methods. The seventh is `admissibilityFilter`, which cannot be compared to that run at all, and
+[the last section](#what-this-still-does-not-measure) says why. Take the rest of the page as far as
+that makes you willing to.
 
 ## One candidate
 

@@ -80,6 +80,17 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
   page quotes them to three figures, marks the row derived and shows the arithmetic. The conclusion
   is unmoved: the ratio goes from 1.4906 to 1.4910, both 49%. On the same two pairs, a whole-run
   cumulative average sits 1.5 to 3.9% above the sustained rate rather than the 2 to 4% claimed.
+- `docs/benchmarks.md` said the 160-byte control reproduces an earlier run "on all six of its
+  methods". `CandidateBenchmark` has seven, and had seven when that sentence was written:
+  `admissibilityFilter` arrived eighteen commits before it. It is also the one method that cannot be
+  compared to that run, because the earlier benchmark was charging it for an allocation, which the
+  last section of the same page already explains. The sentence reads six of seven now, names the
+  seventh and links to the explanation, so the link check holds the two halves together. It matters
+  because the sentence after it is the one that asks a reader to trust the rest of the page.
+- `tools/package-info.java` said every figure is generated from "a sweep checkpoint, or the cipher
+  itself". Two of the six are drawn from `docs/benchmarks.json` and one from
+  `docs/score-histogram.tsv`. All three are committed, so the claim the sentence exists to make was
+  true; the list beside it was not.
 - The `mvn verify` line in `README.md` and `CONTRIBUTING.md` carries a count and a time measured in
   the same run. The count had been re-counted to 148 while the 5.9 seconds beside it was measured
   when the suite held 145. It reads 151 tests in 5.8 seconds, both from one run on the desktop the

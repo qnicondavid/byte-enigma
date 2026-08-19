@@ -129,7 +129,9 @@ class MainTest {
     void aFileOfProseIsStillNotBase64() throws Exception {
         Path prose = Files.createTempFile("byte-enigma", ".txt");
         try {
-            Files.writeString(prose, "this is not a ciphertext, it is a sentence.\n",
+            // No punctuation on purpose. Stripping every space rather than every line break
+            // turned this into twelve characters of the Base64 alphabet, and it decoded.
+            Files.writeString(prose, "attack at dawn\nand hold the coast\n",
                     StandardCharsets.UTF_8);
             Run run = invoke("open", "--password", "hunter2", "--in", prose.toString());
             assertEquals(2, run.status());
@@ -223,11 +225,36 @@ class MainTest {
             {"break", "--language", "--threads", "0", "--in", EMPTY_INPUT},
             {"break", "--language", "--from", "5", "--to", "1", "--in", EMPTY_INPUT},
             {"break", "--language", "--from", "0", "--to", "99999999999", "--in", EMPTY_INPUT},
+            {"break", "--language", "--from", "4294967296", "--to", "4294967396", "--in", EMPTY_INPUT},
+            {"break", "--language", "--from", "-2147483649", "--to", "0", "--in", EMPTY_INPUT},
         };
         for (String[] arguments : bad) {
             Run run = invoke(arguments);
             assertEquals(2, run.status(), String.join(" ", arguments));
             assertTrue(run.err().startsWith("error: "), run.err());
+        }
+    }
+
+    /**
+     * {@code --for} without {@code --checkpoint} stops on time and keeps nothing, and used to say
+     * "then stop and checkpoint" on the way in and "to carry on from here" on the way out.
+     */
+    @Test
+    void theBudgetSaysSoWhenThereIsNothingToCarryOnFrom() throws Exception {
+        Path plain = Files.createTempFile("byte-enigma", ".txt");
+        Path cipher = Files.createTempFile("byte-enigma", ".bin");
+        try {
+            Files.writeString(plain, "ATTACK AT DAWN", StandardCharsets.UTF_8);
+            assertEquals(0, invoke("raw", "--binary", "--key", "99",
+                    "--in", plain.toString(), "--out", cipher.toString()).status());
+
+            Run run = invoke("break", "--language", "--binary", "--in", cipher.toString(),
+                    "--from", "0", "--to", "64", "--for", "600", "--threads", "1");
+            assertTrue(run.out().contains("the work is not saved"), run.out());
+            assertTrue(!run.out().contains("then stop and checkpoint"), run.out());
+        } finally {
+            Files.deleteIfExists(plain);
+            Files.deleteIfExists(cipher);
         }
     }
 

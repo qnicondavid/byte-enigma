@@ -204,7 +204,7 @@ Inside `core`:
 ## Building
 
 ```
-mvn verify                   # 153 tests, 4 to 6 s on one desktop
+mvn verify                   # 154 tests, 4 to 6 s on one desktop
 mvn -Pdist package           # builds core/target/byte-enigma.jar
 mvn -pl benchmarks -am package   # builds benchmarks/target/benchmarks.jar
 java -jar benchmarks/target/benchmarks.jar
@@ -216,8 +216,10 @@ and the figures in `docs/` are drawn by `tools/` from the committed sweep checkp
 cipher itself. To rebuild them:
 
 ```
-mvn -q -pl core -am compile exec:java -Dexec.mainClass=io.github.qnicondavid.byteenigma.breaker.QuadgramTableBuilder
-mvn -q -pl tools -am compile exec:java@diagrams
+mvn -q -pl core -am compile
+mvn -q -pl core exec:java -Dexec.mainClass=io.github.qnicondavid.byteenigma.breaker.QuadgramTableBuilder
+mvn -q -pl tools -am compile
+mvn -q -pl tools exec:java@diagrams
 ```
 
 Then commit the source and the regenerated file together.

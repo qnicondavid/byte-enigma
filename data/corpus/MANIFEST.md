@@ -8,7 +8,8 @@ build if the two ever disagree.
 To rebuild after changing anything here:
 
 ```
-mvn -q -pl core -am compile exec:java -Dexec.mainClass=io.github.qnicondavid.byteenigma.breaker.QuadgramTableBuilder
+mvn -q -pl core -am compile
+mvn -q -pl core exec:java -Dexec.mainClass=io.github.qnicondavid.byteenigma.breaker.QuadgramTableBuilder
 ```
 
 Then commit the corpus and the regenerated table together.
@@ -19,7 +20,8 @@ Every text is a work first published before 1929 and in the public domain in the
 The files are the plain-text selections distributed with the NLTK `gutenberg` corpus, which are
 Project Gutenberg transcriptions with the Project Gutenberg header and footer already removed.
 Each file keeps a single bracketed title line at the top; that line contributes a handful of
-quadgrams and is left in place so the files match their upstream form byte for byte. The year in
+quadgrams and is left in place so the files match their upstream form apart from the line-ending
+normalisation described below. The year in
 that line is the edition someone transcribed, not the first publication, and on four of the eight
 they are different years. Both are here, so `head -1` on any file lands on a column.
 
@@ -53,8 +55,9 @@ reproducibility test actually reads.
 
 ## Why these eight
 
-They are narrative prose by eight different hands, which is what the scorer is asked to
-recognise. Verse and scripture were deliberately left out of the selection: they are available
+They are eight works of narrative prose by six hands, two each by Jane Austen and G. K.
+Chesterton, which is what the scorer is asked to recognise. Verse and scripture were
+deliberately left out of the selection: they are available
 in the same upstream archive, and both skew the statistics hard towards spellings and
 constructions that no longer appear in ordinary English.
 

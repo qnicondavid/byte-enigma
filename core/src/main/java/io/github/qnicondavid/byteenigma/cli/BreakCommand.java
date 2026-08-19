@@ -64,6 +64,12 @@ final class BreakCommand {
         if (to - from > (1L << 32)) {
             throw new Arguments.UsageException("range is wider than the 2^32 keyspace");
         }
+        // Without this the endpoints are cast to int inside the sweep and wrap, so a run over
+        // [4294967296, 4294967396) reports a hundred keys tried and names a winner it never saw.
+        if (from < SeedSweep.KEYSPACE_START || to > SeedSweep.KEYSPACE_END) {
+            throw new Arguments.UsageException("--from and --to must lie inside ["
+                    + SeedSweep.KEYSPACE_START + ", " + SeedSweep.KEYSPACE_END + ")");
+        }
         if (threads < 1) {
             throw new Arguments.UsageException("--threads must be at least 1 but was " + threads);
         }
@@ -139,7 +145,10 @@ final class BreakCommand {
                     keysTried, 100.0 * (resumed == null ? 0.0 : resumed.fraction()));
         }
         if (budgetSeconds > 0L) {
-            stdout.println("budget:     " + Durations.format(budgetSeconds) + ", then stop and checkpoint");
+            stdout.println("budget:     " + Durations.format(budgetSeconds)
+                    + (checkpointPath == null
+                            ? ", then stop. No --checkpoint, so the work is not saved."
+                            : ", then stop and checkpoint"));
         }
         stdout.println();
 
@@ -192,7 +201,9 @@ final class BreakCommand {
         if (stoppedEarly) {
             stdout.printf(Locale.ROOT, "stopped on budget at %,d of %,d keys (%.2f%%). Run the same command again%n",
                     cursor - from, total, 100.0 * (cursor - from) / total);
-            stdout.println("to carry on from here.");
+            stdout.println(checkpointPath == null
+                    ? "from the beginning: nothing was saved, because there was no --checkpoint."
+                    : "to carry on from here.");
             stdout.println();
         }
         if (histogram != null) {
@@ -308,10 +319,13 @@ final class BreakCommand {
         if (args.flag("binary")) {
             return raw;
         }
-        // Whitespace comes out first: docs/keyspace-sweep.md prints its ciphertext wrapped and
-        // a mail client will wrap it again. getMimeDecoder would take that, but it silently drops
-        // every other character outside the alphabet too, so a file of prose would decode.
-        String text = new String(raw, StandardCharsets.UTF_8).replaceAll("\\s", "");
+        // Line breaks come out, and the padding around them, because docs/keyspace-sweep.md
+        // prints its ciphertext wrapped and a mail client will wrap it again. A space inside a
+        // line stays, so a file of prose is still refused: strip every space instead and
+        // "attack at dawn" becomes twelve characters of the Base64 alphabet and decodes.
+        StringBuilder joined = new StringBuilder();
+        new String(raw, StandardCharsets.UTF_8).lines().map(String::strip).forEach(joined::append);
+        String text = joined.toString();
         try {
             return Base64.getDecoder().decode(text);
         } catch (IllegalArgumentException notBase64) {

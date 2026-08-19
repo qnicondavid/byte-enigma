@@ -86,7 +86,7 @@ accident in the whole space.
 not it.
 
 That last number is the one worth carrying away. The entire noise distribution, floor to best
-accident, is 25.00 log-units wide. The margin is 8.3 times that. The key is not at the top of the
+accident, is 24.98 log-units wide, twenty-five bins. The margin is 8.3 times that. The key is not at the top of the
 distribution and it is not in its tail. It is more than eight distribution-widths past the end of it.
 
 The file the run wrote is committed as `score-histogram.tsv`, 199 populated bins out of 7,000, and

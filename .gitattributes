@@ -10,6 +10,7 @@
 
 # The one exception, and the only file here checked out with CRLF on purpose. mvnw.cmd is a batch
 # file, and cmd.exe is the last interpreter that still cares: a label or a parenthesised block read
-# with LF endings does not always parse the way it reads. Declaring it here also stops git from
-# rewriting it on the way into the index, which is what makes "git add" fatal under core.safecrlf.
+# with LF endings does not always parse the way it reads. Git still normalises it to LF in the
+# index; what the declaration buys is that the round trip is reversible, which is why core.safecrlf
+# stops calling "git add" on it a lossy conversion.
 mvnw.cmd text eol=crlf

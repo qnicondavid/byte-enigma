@@ -11,7 +11,8 @@ walks four billion of them.
 
 Available through [JitPack](https://jitpack.io/#qnicondavid/byte-enigma). No transitive dependencies:
 the library has none. JitPack builds a version the first time somebody asks for it, so the first
-resolution of a tag nobody has used yet waits for that build; this one took 35 seconds.
+resolution of a tag nobody has used yet waits for that build. A snapshot of `main` took 35
+seconds there on 19 August 2026; the tag's own build was not timed.
 
 ```xml
 <repositories>
@@ -24,7 +25,7 @@ resolution of a tag nobody has used yet waits for that build; this one took 35 s
 <dependency>
   <groupId>com.github.qnicondavid.byte-enigma</groupId>
   <artifactId>byte-enigma</artifactId>
-  <version>v1.2.2</version>
+  <version>v1.2.3</version>
 </dependency>
 ```
 
@@ -35,9 +36,9 @@ SeedSweep<MyThing> sweep = new SeedSweep<>(MyThing::new, 10);
 
 SweepResult result = sweep.sweepParallel(
         SeedSweep.KEYSPACE_START, SeedSweep.KEYSPACE_END, ciphertext,
-        (key, thing, ciphertext, scratch) -> {
+        (key, thing, payload, scratch) -> {
             thing.rekey(key);
-            int length = thing.apply(ciphertext, scratch);
+            int length = thing.apply(payload, scratch);
             return Candidate.of(key, score(scratch, length), scratch, length);
         });
 

@@ -343,6 +343,12 @@ public final class SeedSweep<T> {
         if (to - from > (1L << 32)) {
             throw new IllegalArgumentException("range is wider than the 2^32 keyspace");
         }
+        // Keys are cast to int in the loops above, so an endpoint outside the keyspace wraps and
+        // the sweep reports keys it never tried. This is the library half, so it checks for itself.
+        if (from < KEYSPACE_START || to > KEYSPACE_END) {
+            throw new IllegalArgumentException("range must lie inside [" + KEYSPACE_START + ", "
+                    + KEYSPACE_END + "), got [" + from + ", " + to + ")");
+        }
     }
 
     private static void joinAll(List<Thread> pool) throws InterruptedException {

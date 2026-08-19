@@ -139,9 +139,13 @@ had measured. Both columns are here so the difference stays visible.
 | 3 | 3.825 ±0.077 | 3.610 ±0.069 |
 | 8 | 7.503 ±0.325 | 6.872 ±0.172 |
 
-A line through `rekeyInPlace` has a slope of 0.688 us per rotor and an intercept of 1.370 us for the
-two involutions, 0.685 us each. Five Fisher-Yates shuffles of 256 elements at about 0.69 us apiece is
-the cost model these docs describe, recovered from the other end.
+The line through the 1-rotor and 8-rotor measurements of `rekeyInPlace` has a slope of 0.688 us per
+rotor and an intercept of 1.370 us for the two involutions, 0.685 us each. Five Fisher-Yates shuffles
+of 256 elements at about 0.69 us apiece is the cost model these docs describe, recovered from the
+other end. The three points are not collinear: that line predicts 3.433 us at three rotors against a
+measured 3.610, which is 2.6 of its own error bars away, and a least-squares fit through all three
+gives 0.681 and 1.456 instead. The cost model survives either fit; the straight line is a reading of
+the two ends and not of the middle.
 
 Rekeying in place beats constructing by 5.6% at three rotors, 11.3% at one and 8.4% at eight. That
 change was made to cut allocation rather than time; the time it buys is real and small.

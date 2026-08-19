@@ -3,6 +3,63 @@
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versions follow
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.3] - 2026-08-19
+
+Two defects in the command line, and eight claims that did not survive being checked by somebody who
+had not written them.
+
+### Fixed
+
+- `break`, `offsets`, `open` and `raw` refuse a file of prose again. 1.2.1 taught them to accept
+  Base64 wrapped across lines by stripping every whitespace character, which also strips the spaces
+  between words: `attack at dawn` becomes twelve characters of the Base64 alphabet and decodes to
+  nine bytes, and the demonstration's own plaintext decodes to forty. `open` returned one byte of
+  rubbish and exit 0 where it used to return an error and exit 2. Line breaks and the padding around
+  them come out now, and nothing else does. The test that was supposed to prevent this fed prose
+  containing a comma and a full stop, so it was rejected on the punctuation and would have passed
+  whatever the decoder did with letters and spaces; it feeds unpunctuated prose now.
+- `break` refuses `--from` and `--to` outside `[-2147483648, 2147483648)`, and so does
+  `SeedSweep.sweep` and `sweepParallel`. Keys are cast to int in the sweep loops, so
+  `--from 4294967296 --to 4294967396` printed a range of a hundred keys, swept keys 0 to 100
+  instead, and named a winner it had never tried. `SECURITY.md` calls a sweep that miscounts keys a
+  real defect; this one miscounted them by naming one.
+- `--for` without `--checkpoint` says what it does. It stops on time and keeps nothing, while
+  printing "then stop and checkpoint" going in and "to carry on from here" coming out. Both lines
+  are conditional now.
+- The two commands for regenerating the quadgram table and the figures, in `README.md` and
+  `data/corpus/MANIFEST.md`, failed on the parent POM. A direct goal invocation runs against every
+  module in the reactor, and `-am` puts the parent in it, which is the same failure commit `7fdc105`
+  took out of CI in August. The build and the goal are separate lines now.
+- The worked example in `docs/using-the-search.md` named its lambda parameter `ciphertext`, the same
+  name as the argument two lines above it. A lambda parameter shares the enclosing method's scope,
+  so the example did not compile for a reader who declared that argument as a local, which is the
+  reading the page invites.
+- `data/corpus/MANIFEST.md` said the corpus is "narrative prose by eight different hands" over a
+  table naming six: Jane Austen and G. K. Chesterton appear twice each.
+- The same page said the files match their upstream form byte for byte, thirty lines above the
+  sentence saying their line endings were normalised on the way in. Four of the eight differ from
+  upstream by exactly that normalisation.
+- `docs/keyspace-sweep.md` gave the noise distribution as 25.00 log-units wide. That is the distance
+  between two bin edges; the two scores the sentence names are 24.98 apart. The margin is 8.3 times
+  either.
+- `docs/benchmarks.md` called 0.688 and 1.370 "a line through `rekeyInPlace`". It is the line
+  through two of its three points, and the third sits 2.6 error bars off it.
+- `docs/using-the-search.md` printed 35 seconds as the time to build the tag above it. That was a
+  snapshot of `main`, one commit earlier; the tag's own build was never timed.
+- The comment in `.gitattributes` said declaring `mvnw.cmd` stops git rewriting it into the index.
+  It does not: the file is LF in the index either way. What the declaration buys is a reversible
+  round trip, which is the reason `core.safecrlf` is satisfied.
+- The 1.2.2 entry below claimed CI, JitPack and this desktop run one version of Maven. The wrapper
+  pins the first two. The desktop is not pinned, and every figure on these pages predates the
+  wrapper.
+- The Maven the wrapper fetches is checksummed. `.mvn/wrapper/maven-wrapper.properties` pinned the
+  version and the URL and nothing else, so every CI job, every JitPack build and every `./mvnw` on a
+  fresh machine downloaded and ran a 9.4 MB zip on the strength of TLS alone.
+  `distributionSha256Sum` is the SHA-256 of the distribution this desktop already runs, and both
+  wrapper scripts check it: `mvnw` lines 226 to 242 through `sha256sum` or `shasum`, `mvnw.cmd`
+  lines 138 to 145 through `Get-FileHash`. Verified by deleting the cached distribution and running
+  `./mvnw -v` again, which re-fetched it and validated before starting Maven.
+
 ## [1.2.2] - 2026-08-19
 
 A build fix, and nothing else. No Java source changed since 1.2.1, so the jar attached here is the
@@ -32,9 +89,11 @@ this desktop use, and a snapshot of `main` built on JitPack in 35 seconds with
 
 - The Maven wrapper, pinned to 3.9.16, generated with `-Dtype=only-script` so no jar is committed
   and `.gitignore`'s `*.jar` has nothing to swallow. `jitpack.yml` and both workflows run `./mvnw`,
-  so the Maven that builds a tag on JitPack, the one that runs the matrix on CI across Linux,
-  Windows, JDK 17 and JDK 21, and the one on the desktop these figures come from are one version.
-  `mvn verify` still works for anyone who has Maven; the wrapper is for the machines that do not.
+  so the Maven that builds a tag on JitPack and the one that runs the matrix on CI across Linux,
+  Windows, JDK 17 and JDK 21 are one pinned version. The desktop is not pinned to it: `README.md`
+  and `CONTRIBUTING.md` both say `mvn` is fine, and the figures on these pages were measured before
+  the wrapper existed. `mvn verify` still works for anyone who has Maven; the wrapper is for the
+  machines that do not.
 - `mvnw.cmd` is declared `text eol=crlf` in `.gitattributes`, the only file in this tree checked
   out with CRLF on purpose. cmd.exe is the last interpreter that still cares, and declaring it is
   also what stops `git add` from being fatal on it under `core.safecrlf`.
@@ -369,7 +428,7 @@ name.
 - The quadgram table counts only the windows the scorer will actually charge: four consecutive letters
   in the source text. The previous table squeezed the spaces out first, which manufactures quadgrams
   like `THEQ` that no scorer ever asks about.
-- The corpus behind the table is now 3.7 MB of prose by eight authors, up from a 472 KB corpus that was
+- The corpus behind the table is now 3.7 MB of prose by six authors, up from a 472 KB corpus that was
   not committed and has since been lost. 1,037,999 counted windows, up from 345,504.
 - `benchmarks` is a module of the reactor build rather than a detached project, so it can no longer
   drift. `CandidateBenchmark` replaces a benchmark that still modelled constructing a fresh machine per
@@ -410,6 +469,7 @@ recording anyway, because both changed the golden vector and both were deliberat
   `String.hashCode` collides on structure rather than chance, so `"Aa"` and `"BB"` produced identical
   ciphertext.
 
+[1.2.3]: https://github.com/qnicondavid/byte-enigma/releases/tag/v1.2.3
 [1.2.2]: https://github.com/qnicondavid/byte-enigma/releases/tag/v1.2.2
 [1.2.1]: https://github.com/qnicondavid/byte-enigma/releases/tag/v1.2.1
 [1.2.0]: https://github.com/qnicondavid/byte-enigma/releases/tag/v1.2.0
